@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OhM!nd Lab — Game Hub</title>
+<link rel="icon" type="image/png" href="pic/Favicon1.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.hero{text-align:center;padding:56px 24px 40px;max-width:560px;margin:0 auto;}
+.hero-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--orange);margin-bottom:14px;}
+.hero h1{font-size:clamp(28px,5vw,42px);font-weight:900;line-height:1.15;margin-bottom:12px;}
+.hero p{font-size:15px;color:var(--t2);line-height:1.6;}
+
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;max-width:980px;margin:0 auto;padding:0 32px 48px;}
+
+.game-card{background:var(--white);border:1.5px solid var(--border);border-radius:18px;padding:28px 24px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:12px;}
+.game-card:hover{border-color:var(--orange);transform:translateY(-3px);box-shadow:0 8px 28px rgba(244,107,27,.18);}
+.game-card-icon{font-size:36px;line-height:1;}
+.game-card-title{font-size:18px;font-weight:800;}
+.game-card-desc{font-size:13px;color:var(--t2);line-height:1.5;flex:1;}
+.game-card-tag{display:inline-flex;align-items:center;gap:5px;background:var(--ol);color:var(--orange);border:1px solid var(--om);border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;width:fit-content;}
+
+.coming-soon{opacity:.55;cursor:default;}
+.coming-soon:hover{transform:none;box-shadow:var(--shadow);border-color:var(--border);}
+.cs-tag{background:var(--bg2);color:var(--t3);border:1px solid var(--border2);}
+
+@media(max-width:640px){
+  .game-grid{padding:0 16px 40px;}
+  .hero{padding:36px 16px 28px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<header>
+  <div class="logo">
+    <img src="pic/OhM!nd Lab.png" style="height:80px;object-fit:contain">
+  </div>
+</header>
+<div style="max-width:980px;margin:0 auto 16px;padding:0 32px">
+  <div id="playerBox" style="background:white;border:1.5px solid #e8e0d5;border-radius:14px;padding:16px 20px">
+
+    <!-- Form nhập tên -->
+    <div id="formView">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">👋 Nhập thông tin để bắt đầu</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input type="text" id="inputName" placeholder="Họ và tên" maxlength="30" style="flex:1;min-width:140px">
+        <input type="text" id="inputDept" placeholder="Phòng ban" maxlength="30" style="flex:1;min-width:140px">
+        <button onclick="savePlayer()">Vào chơi →</button>
+      </div>
+    </div>
+
+    <!-- Hiển thị sau khi nhập -->
+    <div id="profileView" style="display:none">
+      <span id="showName">—</span> · 
+      <span id="showDept">—</span> · 
+      <span onclick="editPlayer()" style="cursor:pointer;color:#f46b1b">✏️ Đổi</span>
+    </div>
+
+  </div>
+</div>
+<div class="hero">
+  <div class="hero-label">OhM!nd Lab · Game Hub</div>
+  <h1>Chọn trò chơi<br>của bạn 🎮</h1>
+  <p>Thử thách tư duy, cạnh tranh với đồng nghiệp và leo lên bảng xếp hạng!</p>
+</div>
+
+<div class="game-grid">
+
+  <!-- Sudoku -->
+  <a href="game/sudoku.html" class="game-card">
+    <div class="game-card-icon">🔢</div>
+    <div class="game-card-title">Sudoku</div>
+    <div class="game-card-desc">Điền số vào lưới 9×9 sao cho mỗi hàng, cột và ô 3×3 đều chứa đủ các số từ 1 đến 9.</div>
+    <div class="game-card-tag">✅ Đang hoạt động</div>
+  </a>
+
+  <!-- Memory Match -->
+  <a href="game/memory-match.html" class="game-card">
+    <div class="game-card-icon">🃏</div>
+    <div class="game-card-title">Lật Thẻ</div>
+    <div class="game-card-desc">Lật 2 thẻ mỗi lượt, tìm tất cả các cặp giống nhau nhanh nhất có thể!</div>
+    <div class="game-card-tag">✅ Đang hoạt động</div>
+  </a>
+
+  <!-- Spot Difference 
+  <a href="spot-difference.html" class="game-card">
+    <div class="game-card-icon">🔍</div>
+    <div class="game-card-title">Tìm Điểm Khác Biệt</div>
+    <div class="game-card-desc">So sánh 2 hình ảnh và tìm ra 10 điểm khác nhau trong thời gian giới hạn.</div>
+    <div class="game-card-tag">✅ Đang hoạt động</div>
+  </a>
+-->
+  <!-- Placeholder: thêm trò mới ở đây -->
+  <div class="game-card coming-soon">
+    <div class="game-card-icon">🧩</div>
+    <div class="game-card-title">Trò chơi mới</div>
+    <div class="game-card-desc">Sắp ra mắt. Hãy theo dõi để không bỏ lỡ!</div>
+    <div class="game-card-tag cs-tag">🔒 Sắp có</div>
+  </div>
+
+</div>
+</div>
+<script>
+  window.onload = () => {
+    const name = localStorage.getItem('bb_name');
+    const dept = localStorage.getItem('bb_dept');
+    if(name) showProfile(name, dept);
+  };
+  
+  function savePlayer(){
+    const name = document.getElementById('inputName').value.trim();
+    const dept = document.getElementById('inputDept').value.trim();
+    if(!name){ alert('Vui lòng nhập tên!'); return; }
+    localStorage.setItem('bb_name', name);
+    localStorage.setItem('bb_dept', dept);
+    showProfile(name, dept);
+  }
+  
+  function showProfile(name, dept){
+    document.getElementById('formView').style.display = 'none';
+    document.getElementById('profileView').style.display = 'block';
+    document.getElementById('showName').textContent = name;
+    document.getElementById('showDept').textContent = dept || 'Chưa có phòng ban';
+  }
+  
+  function editPlayer(){
+    document.getElementById('inputName').value = localStorage.getItem('bb_name')||'';
+    document.getElementById('inputDept').value = localStorage.getItem('bb_dept')||'';
+    document.getElementById('profileView').style.display = 'none';
+    document.getElementById('formView').style.display = 'block';
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OhM!nd Lab — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf8f5;--bg2:#f2ede6;--white:#fff;--border:#e8e0d5;--border2:#d4c9b8;
+  --orange:#f46b1b;--ol:#fff0e6;--om:#fde0c8;--od:#d45a10;
+  --text:#1a1410;--t2:#6b5f52;--t3:#a89880;
+  --green:#2da44e;--gl:#e6f4ec;--red:#e03e3e;--rl:#fdeaea;
+  --blue:#3b82f6;--bl:#eff6ff;
+  --shadow:0 2px 12px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.12);
+  --mono:'DM Mono',monospace;--sans:'Montserrat',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:32px 32px;opacity:.35;pointer-events:none;z-index:0;}
+
+#loginScreen{position:fixed;inset:0;background:rgba(250,248,245,.96);backdrop-filter:blur(8px);z-index:999;display:flex;align-items:center;justify-content:center;}
+#loginScreen.hidden{display:none;}
+.login-box{background:var(--white);border:1.5px solid var(--border);border-radius:20px;padding:40px;width:380px;text-align:center;box-shadow:var(--shadow-lg);}
+.login-box .lock{font-size:48px;margin-bottom:16px;}
+.login-box h1{font-size:24px;font-weight:800;margin-bottom:6px;}
+.login-box p{color:var(--t2);font-size:13px;margin-bottom:24px;line-height:1.5;}
+
+.layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+.sidebar{width:240px;background:var(--white);border-right:1.5px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;box-shadow:var(--shadow);}
+.sb-head{padding:20px 20px 16px;border-bottom:1.5px solid var(--border);}
+.sb-logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:900;}
+.sb-dot{width:30px;height:30px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.sb-badge{margin-top:8px;display:inline-block;background:var(--ol);color:var(--orange);border:1px solid var(--om);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;}
+.sb-section{padding:8px 20px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);}
+.sb-nav{padding:4px 0;flex:1;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--t2);transition:all .15s;border-left:3px solid transparent;}
+.nav-item:hover{background:var(--bg);color:var(--text);}
+.nav-item.active{color:var(--orange);border-left-color:var(--orange);background:var(--ol);}
+.sb-footer{padding:16px 20px;border-top:1.5px solid var(--border);}
+.content{margin-left:240px;padding:28px 32px;flex:1;}
+.page-hdr{margin-bottom:24px;}
+.page-hdr h2{font-size:22px;font-weight:800;}
+.page-hdr p{color:var(--t2);font-size:13px;margin-top:4px;}
+
+.card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:22px;box-shadow:var(--shadow);margin-bottom:16px;}
+.card-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);margin-bottom:14px;}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:9px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--orange);color:white;}.btn-primary:hover{background:var(--od);transform:translateY(-1px);box-shadow:0 4px 16px rgba(244,107,27,.35);}
+.btn-secondary{background:var(--bg);color:var(--text);border:1.5px solid var(--border);}.btn-secondary:hover{border-color:var(--orange);color:var(--orange);}
+.btn-danger{background:var(--rl);color:var(--red);border:1.5px solid #f5b5b5;}.btn-danger:hover{background:#fad5d5;}
+.btn-success{background:var(--gl);color:var(--green);border:1.5px solid #a3d9b4;}.btn-success:hover{background:#d0eedd;}
+.btn-sm{padding:6px 13px;font-size:12px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important;}
+
+.form-group{margin-bottom:16px;}
+.form-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:7px;}
+input[type=text],input[type=password],input[type=datetime-local],input[type=number],select,textarea{
+  background:var(--bg);border:1.5px solid var(--border);color:var(--text);border-radius:9px;
+  padding:10px 14px;font-family:var(--sans);font-size:13px;font-weight:500;width:100%;transition:all .2s;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(244,107,27,.1);}
+textarea{resize:vertical;min-height:70px;}
+
+.diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.diff-card{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;}
+.diff-card:hover,.diff-card.active{border-color:var(--orange);background:var(--ol);}
+.diff-card .di{font-size:22px;margin-bottom:6px;}
+.diff-card .dl{font-size:13px;font-weight:700;}
+.diff-card .ds{font-size:11px;color:var(--t3);margin-top:2px;}
+
+.preview-sudoku{display:grid;grid-template-columns:repeat(9,1fr);border:2px solid var(--text);border-radius:4px;overflow:hidden;max-width:252px;}
+.ps-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:500;background:var(--white);border:1px solid #e0d8d0;}
+.ps-cell.given{color:var(--text);font-weight:700;}
+.ps-cell.empty{color:var(--t3);font-size:8px;}
+.ps-cell:nth-child(3n){border-right:2px solid #bbb;}
+.ps-cell:nth-child(9n){border-right:none;}
+.ps-rdiv{border-bottom:2px solid #bbb;}
+
+.active-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.active-ch-card{background:linear-gradient(135deg,var(--orange),#f8923a);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 4px 16px rgba(244,107,27,.2);}
+.active-ch-info h4{font-size:16px;font-weight:800;color:white;margin-bottom:3px;}
+.active-ch-info p{font-size:12px;color:rgba(255,255,255,.8);}
+.active-ch-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.act-tag{background:rgba(255,255,255,.2);border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;color:white;}
+.active-ch-actions{display:flex;gap:7px;flex-wrap:wrap;}
+.ab{padding:7px 14px;border-radius:7px;font-family:var(--sans);font-weight:700;font-size:12px;cursor:pointer;border:none;transition:all .15s;}
+.ab-stop{background:rgba(255,255,255,.2);color:white;}.ab-stop:hover{background:rgba(255,255,255,.3);}
+.ab-ext{background:rgba(255,255,255,.15);color:white;}.ab-ext:hover{background:rgba(255,255,255,.25);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:white;animation:blink 1.5s infinite;display:inline-block;margin-right:5px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+.share-box{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:10px;}
+.share-url{font-family:var(--mono);font-size:12px;color:var(--orange);word-break:break-all;margin-bottom:8px;line-height:1.5;}
+
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{text-align:left;padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);border-bottom:1.5px solid var(--border);font-weight:700;}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--bg2);font-size:13px;font-weight:500;vertical-align:middle;}
+.tbl tr:hover td{background:var(--bg);}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;}
+.pill-active{background:var(--gl);color:var(--green);border:1px solid #a3d9b4;}
+.pill-ended{background:var(--bg2);color:var(--t3);border:1px solid var(--border);}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.stat-box{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);}
+.stat-box .sn{font-family:var(--mono);font-size:28px;font-weight:500;color:var(--orange);margin-bottom:4px;}
+.stat-box .sl{font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+
+.toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:var(--text);color:white;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);transform:translateY(70px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.toast.show{transform:none;opacity:1;}
+.toast.ok{background:var(--green);}.toast.bad{background:var(--red);}
+
+.page{display:none;}.page.active{display:block;animation:fadeUp .2s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.row{display:flex;gap:16px;flex-wrap:wrap;}.col{flex:1;min-width:240px;}
+hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
+.tip{background:var(--ol);border:1px solid var(--om);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--t2);line-height:1.5;margin-top:10px;}
+.tip-blue{background:var(--bl);border:1px solid #bfdbfe;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="lock">🔐</div>
+    <h1>Admin Panel</h1>
+    <p>Đăng nhập để tạo và quản lý Challenge</p>
+    <input type="password" id="pwInput" placeholder="Mật khẩu admin..." style="margin-bottom:12px;text-align:center;font-size:15px" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:14px;padding:11px" onclick="doLogin()">Đăng nhập</button>
+    <p style="margin-top:14px;font-size:11px;color:var(--t3)">Mật khẩu mặc định: <strong style="color:var(--orange)">admin123</strong></p>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo"><div class="sb-dot">🧩</div>OhM!nd Lab</div>
+      <div class="sb-badge">⚙️ ADMIN</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section">Tạo game</div>
+      <div class="nav-item active" onclick="switchPage('sudoku',this)"><span>🔢</span> Sudoku</div>
+      <div class="nav-item" onclick="switchPage('spot',this)"><span>🔍</span> Spot Difference</div>
+      <div class="nav-item" onclick="switchPage('memory',this)"><span>🃏</span> Lật Thẻ</div>
+      <div class="sb-section" style="margin-top:8px">Quản lý</div>
+      <div class="nav-item" onclick="switchPage('manage',this)"><span>📋</span> Quản lý</div>
+      <div class="nav-item" onclick="switchPage('results',this)"><span>📊</span> Kết quả</div>
+    </div>
+    <div class="sb-footer">
+      <button class="btn btn-secondary" style="width:100%;justify-content:center;font-size:12px" onclick="logout()">🚪 Đăng xuất</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ SUDOKU ══════════════════════════════════════════════ -->
+    <div id="page-sudoku" class="page active">
+      <div class="page-hdr">
+        <h2>🔢 Tạo Sudoku Challenge</h2>
+        <p>Có thể publish nhiều ván cùng lúc — mỗi ván có leaderboard riêng</p>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-label">Thông tin ván</div>
+            <div class="form-group">
+              <label class="form-label">Tiêu đề</label>
+              <input type="text" id="cTitle" placeholder="VD: Sudoku Tuần 1 — Phòng Marketing">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mô tả (tùy chọn)</label>
+              <textarea id="cDesc" placeholder="Ghi chú thêm cho người chơi..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hết hạn lúc</label>
+              <input type="datetime-local" id="cDeadline">
+            </div>
+            <hr class="dv">
+            <div class="card-label">Độ khó</div>
+            <div class="diff-grid">
+              <div class="diff-card" onclick="selDiff('easy',this)"><div class="di">😊</div><div class="dl">Dễ</div><div class="ds">30 ô trống</div></div>
+              <div class="diff-card active" onclick="selDiff('medium',this)"><div class="di">🤔</div><div class="dl">Vừa</div><div class="ds">45 ô trống</div></div>
+              <div class="diff-card" onclick="selDiff('hard',this)"><div class="di">😤</div><div class="dl">Khó</div><div class="ds">55 ô trống</div></div>
+            </div>
+            <hr class="dv">
+            <div id="seedGroup" class="form-group">
+              <label class="form-label">Seed câu đố</label>
+              <div style="display:flex;gap:8px">
+                <input type="number" id="cSeed" value="1" min="1" max="99999" style="flex:1">
+                <button class="btn btn-secondary btn-sm" onclick="randomSeed()">🎲 Random</button>
+              </div>
+            </div>
+            <div class="tip">💡 Mỗi seed = 1 câu đố cố định. Tất cả người chơi cùng seed → cùng câu đố.</div>
+            <hr class="dv">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary" onclick="previewChallenge()" style="flex:1;justify-content:center">👁 Xem trước</button>
+              <button class="btn btn-primary" onclick="publishChallenge()" style="flex:1;justify-content:center">🚀 Publish</button>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-label" id="previewLabel">Xem trước Sudoku</div>
+            <div id="previewArea"><p style="color:var(--t3);font-size:13px;padding:20px 0;text-align:center">Nhấn "Xem trước" để hiển thị</p></div>
+          </div>
+          <div class="card" id="shareCard" style="display:none">
+            <div class="card-label">🔗 Link chia sẻ</div>
+            <p style="font-size:13px;color:var(--t2);margin-bottom:10px">Gửi link này cho nhân viên:</p>
+            <div class="share-box">
+              <div class="share-url" id="shareUrl">—</div>
+              <button class="btn btn-secondary btn-sm" onclick="copyLink()">📋 Copy link</button>
+            </div>
+            <div class="tip" style="margin-top:10px">📌 Người chơi vào sẽ thấy danh sách tất cả ván đang active.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SPOT DIFFERENCE ════════════════════════════════════ -->
+    <div id="page-spot" class="page">
+      <div class="page-hdr">
+        <h2>🔍 Tạo Spot Difference</h2>
+        <p>Nhập link 2 ảnh, đánh dấu 10 điểm khác biệt, publish cho người chơi</p>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-label">Thông tin ván</div>
+            <div class="form-group">
+              <label class="form-label">Tiêu đề</label>
+              <input type="text" id="spTitle" placeholder="VD: Tìm điểm khác — Văn phòng mới">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mô tả (tùy chọn)</label>
+              <input type="text" id="spDesc" placeholder="Gợi ý hoặc chú thích...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hết hạn lúc</label>
+              <input type="datetime-local" id="spDeadline">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Giới hạn thời gian (giây)</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="number" id="spTime" value="180" min="30" max="600" style="flex:1" oninput="document.getElementById('spTimeDisplay').textContent='= '+Math.floor(this.value/60)+':'+String(this.value%60).padStart(2,'0')">
+                <span style="font-size:13px;color:var(--t3);font-weight:700;min-width:45px" id="spTimeDisplay">= 3:00</span>
+              </div>
+            </div>
+            <hr class="dv">
+            <div class="card-label">Link ảnh</div>
+            <div class="form-group">
+              <label class="form-label">Link ảnh gốc (trái)</label>
+              <input type="text" id="spImg1" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
+              <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(1)" style="margin-top:6px">👁 Xem trước ảnh trái</button>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Link ảnh đã chỉnh (phải)</label>
+              <input type="text" id="spImg2" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
+              <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(2)" style="margin-top:6px">👁 Xem trước ảnh phải</button>
+            </div>
+            <div class="tip">💡 Sau khi xem trước, click vào <strong>ảnh phải</strong> để đánh dấu 10 điểm khác biệt.</div>
+            <div class="tip tip-blue" style="margin-top:6px">📌 <strong>Google Drive:</strong> Share → Anyone with link → Copy link → dán vào đây. Hệ thống tự chuyển sang link trực tiếp.</div>
+            <hr class="dv">
+            <button class="btn btn-primary" onclick="publishSpot()" style="width:100%;justify-content:center">🚀 Publish</button>
+          </div>
+        </div>
+        <div class="col" style="min-width:280px">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div class="card-label" style="margin:0">Đánh dấu điểm khác biệt</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:13px;font-weight:700;color:var(--orange)" id="spSpotCount">0 / 10</span>
+                <button class="btn btn-secondary btn-sm" onclick="clearSpots()">Xóa hết</button>
+              </div>
+            </div>
+            <div class="tip" style="margin-bottom:12px">👆 Click vào <strong>ảnh phải</strong> để đánh dấu từng điểm. Cần đủ 10 điểm mới publish được.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ảnh gốc</div>
+                <div style="position:relative;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;min-height:110px;background:var(--bg2);display:flex;align-items:center;justify-content:center" id="sp-left-wrap">
+                  <span style="font-size:11px;color:var(--t3)">Chưa tải ảnh</span>
+                  <img id="sp-preview-left" style="display:none;width:100%;height:auto;pointer-events:none" draggable="false">
+                  <canvas id="sp-canvas-left" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;margin-bottom:4px">← Click để đánh dấu</div>
+                <div style="position:relative;border:1.5px dashed var(--orange);border-radius:8px;overflow:hidden;min-height:110px;background:var(--bg2);cursor:crosshair;display:flex;align-items:center;justify-content:center" id="sp-right-wrap">
+                  <span style="font-size:11px;color:var(--t3)">Chưa tải ảnh</span>
+                  <img id="sp-preview-right" style="display:none;width:100%;height:auto;pointer-events:none" draggable="false">
+                  <canvas id="sp-canvas-right" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+                </div>
+              </div>
+            </div>
+            <div id="sp-spots-list" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto"></div>
+          </div>
+          <div class="card" id="spShareCard" style="display:none">
+            <div class="card-label">🔗 Link chia sẻ</div>
+            <div class="share-box">
+              <div class="share-url" id="spShareUrl">—</div>
+              <button class="btn btn-secondary btn-sm" onclick="copySpotLink()">📋 Copy link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ MEMORY MATCH ═══════════════════════════════════════ -->
+    <div id="page-memory" class="page">
+      <div class="page-hdr">
+        <h2>🃏 Tạo Game Lật Thẻ</h2>
+        <p>Nhập link ảnh cho từng cặp thẻ, publish cho người chơi</p>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-label">Thông tin ván</div>
+            <div class="form-group">
+              <label class="form-label">Tiêu đề</label>
+              <input type="text" id="mmTitle" placeholder="VD: Lật thẻ — Sản phẩm mới Q3">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mô tả (tùy chọn)</label>
+              <input type="text" id="mmDesc" placeholder="Gợi ý hoặc chú thích...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hết hạn lúc</label>
+              <input type="datetime-local" id="mmDeadline">
+            </div>
+            <hr class="dv">
+            <div class="card-label">Danh sách cặp thẻ</div>
+            <div class="tip" style="margin-bottom:12px">💡 Mỗi link ảnh = 1 cặp thẻ. Tối thiểu 4 cặp, tối đa 20 cặp. Dùng link Google Drive hoặc Imgur.</div>
+            <div class="tip tip-blue" style="margin-bottom:14px">📌 <strong>Google Drive:</strong> Share → Anyone with link → Copy link → dán vào đây. Hệ thống tự chuyển sang link trực tiếp.</div>
+            <div id="mmCardList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary" onclick="addMMCard()" style="flex:1;justify-content:center">+ Thêm thẻ</button>
+              <button class="btn btn-secondary btn-sm" onclick="removeLastMMCard()" title="Xóa thẻ cuối">－</button>
+            </div>
+            <hr class="dv">
+            <button class="btn btn-primary" onclick="publishMemory()" style="width:100%;justify-content:center">🚀 Publish</button>
+          </div>
+        </div>
+        <div class="col" style="min-width:260px">
+          <div class="card">
+            <div class="card-label">Xem trước thẻ</div>
+            <div class="tip" style="margin-bottom:12px">👁 Nhấn "Xem trước" ở từng thẻ để kiểm tra ảnh trước khi publish.</div>
+            <div id="mmPreviewGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+          </div>
+          <div class="card" id="mmShareCard" style="display:none">
+            <div class="card-label">🔗 Link chia sẻ</div>
+            <div class="share-box">
+              <div class="share-url" id="mmShareUrl">—</div>
+              <button class="btn btn-secondary btn-sm" onclick="copyMMLink()">📋 Copy link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MANAGE ══════════════════════════════════════════════ -->
+    <div id="page-manage" class="page">
+      <div class="page-hdr">
+        <h2>📋 Quản lý Challenge</h2>
+        <p>Xem và điều chỉnh các ván đang active</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="card-label" style="margin:0">Đang active (<span id="activeCount">0</span> ván)</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadManage()">🔄 Refresh</button>
+        </div>
+        <div id="activeList" class="active-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Lịch sử</div>
+        <div id="histArea"><p style="color:var(--t3);font-size:13px">Đang tải...</p></div>
+      </div>
+    </div>
+
+    <!-- ══ RESULTS ═════════════════════════════════════════════ -->
+    <div id="page-results" class="page">
+      <div class="page-hdr">
+        <h2>📊 Kết quả</h2>
+        <p>Tracking đầy đủ theo từng ván game</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="sn" id="stTotal">—</div><div class="sl">Tổng lượt</div></div>
+        <div class="stat-box"><div class="sn" id="stPlayers">—</div><div class="sl">Người chơi</div></div>
+        <div class="stat-box"><div class="sn" id="stAvg">—</div><div class="sl">TG trung bình</div></div>
+        <div class="stat-box"><div class="sn" id="stBest">—</div><div class="sl">Nhanh nhất</div></div>
+        <div class="stat-box"><div class="sn" id="stErrors">—</div><div class="sl">Lỗi TB</div></div>
+        <div class="stat-box"><div class="sn" id="stHints">—</div><div class="sl">Hint TB</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div class="card-label" style="margin:0">Kết quả chi tiết</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="filterCh" onchange="loadResults()" style="width:auto">
+              <option value="all">Tất cả ván</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="loadResults()">🔄</button>
+            <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+          </div>
+        </div>
+        <div id="resultsArea"><p style="color:var(--t3);font-size:13px">Đang tải...</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymUdsmg4P8vipb279CRq1YmHY9iSbiVkKWmRJvw6SYmzNumfxJi9K4_1yJFqYRaf8H/exec';
+const ADMIN_PW   = 'admin123'; // ← ĐỔI MẬT KHẨU
+const _key       = 'playlearnBTK';
+
+let challenges = JSON.parse(localStorage.getItem('bb_challenges')||'[]');
+let nextId = challenges.length ? Math.max(...challenges.map(c=>+c.id))+1 : 1;
+let currentDiff = 'medium';
+let publishedShareUrl = '';
+
+// ── LOGIN ────────────────────────────────────────────────────
+async function doLogin(){
+  if(document.getElementById('pwInput').value!==ADMIN_PW){showToast('Sai mật khẩu!','bad');return;}
+  document.getElementById('loginScreen').classList.add('hidden');
+  showToast('Đang tải...','');
+  try{
+    const res=await fetch(`${SCRIPT_URL}?action=getActiveChallenges&key=${_key}&_=${Date.now()}`);
+    const data=await res.json();
+    if(data.challenges){
+      const fromSheets=data.challenges||[];
+      const fromLocal=JSON.parse(localStorage.getItem('bb_challenges')||'[]');
+      const merged=[...fromSheets];
+      fromLocal.forEach(c=>{if(!merged.find(s=>String(s.id)===String(c.id)))merged.push(c);});
+      merged.sort((a,b)=>+a.id - +b.id);
+      challenges=merged;
+      nextId=challenges.length?Math.max(...challenges.map(c=>+c.id))+1:1;
+      localStorage.setItem('bb_challenges',JSON.stringify(challenges));
+    }
+  }catch(e){console.error('Sync failed:',e);}
+  loadManage(); loadResults();
+  showToast('Chào Admin! 👑','ok');
+}
+function logout(){ location.reload(); }
+
+// ── NAV ──────────────────────────────────────────────────────
+function switchPage(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='manage') loadManage();
+  if(name==='results') loadResults();
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+window.onload=()=>{
+  const d=new Date(Date.now()+24*3600000);
+  const pad=n=>String(n).padStart(2,'0');
+  const dtVal=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  document.getElementById('cDeadline').value=dtVal;
+  document.getElementById('spDeadline').value=dtVal;
+  document.getElementById('mmDeadline').value=dtVal;
+  randomSeed();
+  updateSpotList();
+  initMMCards();
+};
+
+// ══════════════════════════════════════════════════════════════
+//  SUDOKU
+// ══════════════════════════════════════════════════════════════
+function selDiff(d,el){
+  currentDiff=d;
+  document.querySelectorAll('.diff-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+function randomSeed(){ document.getElementById('cSeed').value=Math.floor(Math.random()*9000)+1; }
+
+function previewChallenge(){
+  const seed=+document.getElementById('cSeed').value||1;
+  const{board}=generateSudoku(currentDiff,seed);
+  const area=document.getElementById('previewArea');
+  const empty=board.flat().filter(v=>v===0).length;
+  const diffN={easy:'Dễ',medium:'Vừa',hard:'Khó'};
+  area.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <span style="font-size:13px;font-weight:700">Seed #${seed}</span>
+    <span style="background:var(--ol);color:var(--orange);border:1px solid var(--om);border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700">${diffN[currentDiff]}</span>
+    <span style="font-size:12px;color:var(--t3)">${empty} ô trống</span>
+  </div>`;
+  const grid=document.createElement('div');grid.className='preview-sudoku';
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+    const div=document.createElement('div');div.className='ps-cell';
+    if(r===2||r===5)div.classList.add('ps-rdiv');
+    if(board[r][c]){div.classList.add('given');div.textContent=board[r][c];}
+    else{div.classList.add('empty');div.textContent='·';}
+    grid.appendChild(div);
+  }
+  area.appendChild(grid);
+}
+
+async function publishChallenge(){
+  const title=document.getElementById('cTitle').value.trim();
+  const desc=document.getElementById('cDesc').value.trim();
+  const seed=+document.getElementById('cSeed').value||1;
+  const deadlineVal=document.getElementById('cDeadline').value;
+  if(!title){showToast('Vui lòng nhập tiêu đề!','bad');return;}
+  if(!deadlineVal){showToast('Vui lòng chọn thời hạn!','bad');return;}
+  const ch={id:nextId++,type:'sudoku',title,description:desc,difficulty:currentDiff,seed,
+    deadline:new Date(deadlineVal).toISOString(),status:'active',createdAt:new Date().toISOString()};
+  challenges.push(ch);
+  localStorage.setItem('bb_challenges',JSON.stringify(challenges));
+  try{
+    await fetch(`${SCRIPT_URL}?action=setChallenge&key=${_key}&data=${encodeURIComponent(JSON.stringify(ch))}`);
+  }catch(e){console.error(e);}
+  showToast(`🚀 Sudoku #${ch.id} đã publish!`,'ok');
+  publishedShareUrl=location.href.replace('admin.html','game/sudoku.html');
+  document.getElementById('shareCard').style.display='block';
+  document.getElementById('shareUrl').textContent=publishedShareUrl;
+  previewChallenge();
+}
+
+function copyLink(){
+  navigator.clipboard.writeText(document.getElementById('shareUrl').textContent)
+    .then(()=>showToast('✅ Đã copy link!','ok'));
+}
+
+// ── SUDOKU GENERATOR ─────────────────────────────────────────
+function seededRand(seed){let s=seed%2147483647;if(s<=0)s+=2147483646;return()=>{s=s*16807%2147483647;return(s-1)/2147483646;};}
+function seededShuffle(arr,rng){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function generateSudoku(diff,seed){
+  const rng=seededRand(seed);const board=Array(9).fill(null).map(()=>Array(9).fill(0));
+  fillSudoku(board,rng);const solution=board.map(r=>[...r]);
+  const remove={easy:30,medium:45,hard:55}[diff]||40;
+  const pos=[];for(let r=0;r<9;r++)for(let c=0;c<9;c++)pos.push([r,c]);
+  seededShuffle(pos,rng).slice(0,remove).forEach(([r,c])=>board[r][c]=0);
+  return{board,solution};
+}
+function fillSudoku(board,rng){
+  const nums=rng?seededShuffle([1,2,3,4,5,6,7,8,9],rng):[1,2,3,4,5,6,7,8,9];
+  for(let r=0;r<9;r++)for(let c=0;c<9;c++){if(board[r][c]===0){for(const n of nums){if(isSafe(board,r,c,n)){board[r][c]=n;if(fillSudoku(board,null))return true;board[r][c]=0;}}return false;}}return true;
+}
+function isSafe(b,r,c,n){if(b[r].includes(n))return false;if(b.some(row=>row[c]===n))return false;const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;for(let i=0;i<3;i++)for(let j=0;j<3;j++)if(b[br+i][bc+j]===n)return false;return true;}
+
+// ══════════════════════════════════════════════════════════════
+//  SPOT DIFFERENCE
+// ══════════════════════════════════════════════════════════════
+const MAX_SPOTS = 10;
+let spSpots = [];
+let spImg1Data = null;
+let spImg2Data = null;
+
+function gdriveDirect(url){
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m) return 'https://drive.google.com/uc?export=view&id='+m[1];
+  return url;
+}
+
+function previewSpotImg(side){
+  const inputEl = document.getElementById('spImg'+side);
+  const url = gdriveDirect(inputEl.value.trim());
+  if(!url){ showToast('Vui lòng nhập link ảnh!','bad'); return; }
+  const previewId = side===1 ? 'sp-preview-left' : 'sp-preview-right';
+  const img = document.getElementById(previewId);
+  img.onload = () => {
+    img.style.display = 'block';
+    const span = img.parentElement.querySelector('span');
+    if(span) span.style.display='none';
+    if(side===1){ spImg1Data=url; }
+    else{
+      spImg2Data=url;
+      document.getElementById('sp-right-wrap').onclick = handleSpotClick;
+    }
+    requestAnimationFrame(redrawCanvases);
+    showToast('✅ Ảnh đã tải!','ok');
+  };
+  img.onerror = () => showToast('❌ Không tải được ảnh. Kiểm tra link hoặc quyền chia sẻ.','bad');
+  img.src = url;
+}
+
+function handleSpotClick(e){
+  if(spSpots.length >= MAX_SPOTS){ showToast(`Đã đủ ${MAX_SPOTS} điểm!`,''); return; }
+  if(!spImg2Data){ showToast('Vui lòng tải ảnh trước!','bad'); return; }
+  const wrap = document.getElementById('sp-right-wrap');
+  const img = document.getElementById('sp-preview-right');
+  const iRect = img.getBoundingClientRect();
+  const pctX = (e.clientX - iRect.left) / iRect.width;
+  const pctY = (e.clientY - iRect.top) / iRect.height;
+  if(pctX<0||pctX>1||pctY<0||pctY>1) return;
+  spSpots.push({ rightX:pctX, rightY:pctY, leftX:pctX, leftY:pctY });
+  updateSpotList();
+  redrawCanvases();
+  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + MAX_SPOTS;
+}
+
+function redrawCanvases(){
+  ['left','right'].forEach(side => {
+    const wrap = document.getElementById('sp-'+side+'-wrap');
+    const canvas = document.getElementById('sp-canvas-'+side);
+    const img = document.getElementById('sp-preview-'+side);
+    if(!canvas||!img||img.style.display==='none') return;
+    const iRect = img.getBoundingClientRect();
+    const wRect = wrap.getBoundingClientRect();
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    ctx.clearRect(0,0,canvas.offsetWidth,canvas.offsetHeight);
+    const offX = iRect.left - wRect.left;
+    const offY = iRect.top - wRect.top;
+    spSpots.forEach((s,i) => {
+      const px = offX + (side==='right'?s.rightX:s.leftX) * iRect.width;
+      const py = offY + (side==='right'?s.rightY:s.leftY) * iRect.height;
+      ctx.beginPath();
+      ctx.arc(px, py, 13, 0, Math.PI*2);
+      ctx.strokeStyle = '#f46b1b';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(244,107,27,0.18)';
+      ctx.fill();
+      ctx.fillStyle = '#f46b1b';
+      ctx.font = 'bold 10px Montserrat,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(i+1, px, py);
+    });
+  });
+}
+
+function updateSpotList(){
+  const list = document.getElementById('sp-spots-list');
+  if(!spSpots.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--t3);text-align:center;padding:8px">Chưa đánh dấu điểm nào</div>';
+    return;
+  }
+  list.innerHTML = spSpots.map((s,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border-radius:8px;font-size:12px">
+      <span style="background:var(--orange);color:white;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">${i+1}</span>
+      <span style="color:var(--t2);flex:1">X: ${(s.rightX*100).toFixed(1)}% &nbsp; Y: ${(s.rightY*100).toFixed(1)}%</span>
+      <button onclick="removeSpot(${i})" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:16px;padding:0;line-height:1" title="Xóa điểm này">×</button>
+    </div>`).join('');
+}
+
+function removeSpot(i){
+  spSpots.splice(i,1);
+  updateSpotList();
+  redrawCanvases();
+  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + MAX_SPOTS;
+}
+
+function clearSpots(){
+  spSpots=[];
+  updateSpotList();
+  redrawCanvases();
+  document.getElementById('spSpotCount').textContent = '0 / ' + MAX_SPOTS;
+}
+
+async function publishSpot(){
+  const title = document.getElementById('spTitle').value.trim();
+  const desc  = document.getElementById('spDesc').value.trim();
+  const deadlineVal = document.getElementById('spDeadline').value;
+  const timeLimit = parseInt(document.getElementById('spTime').value)||180;
+  if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
+  if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
+  if(!spImg1Data||!spImg2Data){ showToast('Vui lòng xem trước đủ 2 ảnh!','bad'); return; }
+  if(spSpots.length < MAX_SPOTS){ showToast(`Cần đánh dấu đủ ${MAX_SPOTS} điểm! (hiện có ${spSpots.length})`,'bad'); return; }
+
+  const ch = {
+    id: nextId++,
+    type: 'spot-difference',
+    title, description: desc,
+    difficulty: 'medium',
+    seed: 0,
+    timeLimit,
+    spots: spSpots,
+    imgOriginal: spImg1Data,
+    imgModified: spImg2Data,
+    deadline: new Date(deadlineVal).toISOString(),
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+  challenges.push(ch);
+  localStorage.setItem('bb_challenges', JSON.stringify(challenges));
+  try{
+    // Send without images to Sheets (URLs only, no base64)
+    const chForSheets = {...ch};
+    await fetch(`${SCRIPT_URL}?action=setChallenge&key=${_key}&data=${encodeURIComponent(JSON.stringify(chForSheets))}`);
+  }catch(e){ console.error(e); }
+
+  const spotLink = location.href.replace('admin.html','game/spot-difference.html');
+  document.getElementById('spShareCard').style.display='block';
+  document.getElementById('spShareUrl').textContent = spotLink;
+  showToast(`🚀 Spot Game #${ch.id} đã publish!`,'ok');
+
+  // Reset
+  spSpots=[]; spImg1Data=null; spImg2Data=null;
+  document.getElementById('spTitle').value='';
+  document.getElementById('spDesc').value='';
+  document.getElementById('spImg1').value='';
+  document.getElementById('spImg2').value='';
+  ['sp-preview-left','sp-preview-right'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.style.display='none'; el.src=''; }
+    const span=document.getElementById(id.replace('preview','')+'wrap')?.querySelector('span');
+    if(span) span.style.display='';
+  });
+  clearSpots();
+}
+
+function copySpotLink(){
+  navigator.clipboard.writeText(document.getElementById('spShareUrl').textContent)
+    .then(()=>showToast('✅ Đã copy link!','ok'));
+}
+
+window.addEventListener('resize', ()=>{
+  if(document.getElementById('page-spot').classList.contains('active')) redrawCanvases();
+});
+
+// ══════════════════════════════════════════════════════════════
+//  MANAGE
+// ══════════════════════════════════════════════════════════════
+function loadManage(){
+  const now=new Date();
+  const active=challenges.filter(c=>c.status==='active'&&new Date(c.deadline)>now);
+  document.getElementById('activeCount').textContent=active.length;
+  const al=document.getElementById('activeList');
+  const typeLabel={sudoku:'🔢 Sudoku','spot-difference':'🔍 Spot','memory-match':'🃏 Lật Thẻ'};
+  if(!active.length){
+    al.innerHTML='<div style="text-align:center;padding:24px;color:var(--t3)">😴 Không có ván nào đang active</div>';
+  }else{
+    al.innerHTML='';
+    active.forEach(ch=>{
+      const diffN={easy:'Dễ',medium:'Vừa',hard:'Khó'};
+      const div=document.createElement('div');div.className='active-ch-card';
+      div.innerHTML=`
+        <div class="active-ch-info">
+          <h4><span class="live-dot"></span>${escH(ch.title)}</h4>
+          <p>Hết hạn: ${new Date(ch.deadline).toLocaleString('vi-VN')}</p>
+          <div class="active-ch-tags">
+            <span class="act-tag">#${ch.id}</span>
+            <span class="act-tag">${typeLabel[ch.type]||ch.type}</span>
+            ${ch.type==='sudoku'?`<span class="act-tag">${diffN[ch.difficulty]||ch.difficulty}</span>`:''}
+            ${ch.type==='spot-difference'?`<span class="act-tag">⏱ ${Math.floor((ch.timeLimit||180)/60)}:${String((ch.timeLimit||180)%60).padStart(2,'0')}</span>`:''}
+            ${ch.type==='memory-match'?`<span class="act-tag">🎴 ${ch.cards?.length||0} cặp</span>`:''}
+          </div>
+        </div>
+        <div class="active-ch-actions">
+          <button class="ab ab-stop" onclick="stopChallenge(${ch.id})">⏹ Dừng</button>
+          <button class="ab ab-ext" onclick="extendChallenge(${ch.id},1)">+1h</button>
+          <button class="ab ab-ext" onclick="extendChallenge(${ch.id},24)">+24h</button>
+          <button class="ab ab-ext" onclick="viewResultsForChallenge(${ch.id})">📊 Kết quả</button>
+        </div>`;
+      al.appendChild(div);
+    });
+  }
+
+  // History table
+  const hist=document.getElementById('histArea');
+  if(!challenges.length){hist.innerHTML='<p style="color:var(--t3);font-size:13px">Chưa có challenge nào</p>';return;}
+  hist.innerHTML=`<table class="tbl">
+    <thead><tr><th>ID</th><th>Loại</th><th>Tiêu đề</th><th>Deadline</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody>${[...challenges].reverse().map(c=>{
+      const isActive=c.status==='active'&&new Date(c.deadline)>new Date();
+      return`<tr>
+        <td><span style="font-family:var(--mono);color:var(--orange)">#${c.id}</span></td>
+        <td><span style="font-size:12px">${typeLabel[c.type]||c.type||'—'}</span></td>
+        <td style="font-weight:600">${escH(c.title)}</td>
+        <td style="font-size:12px;color:var(--t2)">${new Date(c.deadline).toLocaleString('vi-VN')}</td>
+        <td>${isActive?'<span class="pill pill-active"><span class="live-dot" style="background:var(--green);width:6px;height:6px"></span>Active</span>':'<span class="pill pill-ended">Ended</span>'}</td>
+        <td><button class="btn btn-secondary btn-sm" onclick="viewResultsForChallenge(${c.id})">Kết quả</button></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function stopChallenge(id){
+  const ch=challenges.find(c=>c.id===id);if(!ch)return;
+  ch.deadline=new Date().toISOString();
+  localStorage.setItem('bb_challenges',JSON.stringify(challenges));
+  showToast('⏹ Đã dừng challenge','ok');loadManage();
+}
+function extendChallenge(id,hours){
+  const ch=challenges.find(c=>c.id===id);if(!ch)return;
+  ch.deadline=new Date(new Date(ch.deadline).getTime()+hours*3600000).toISOString();
+  localStorage.setItem('bb_challenges',JSON.stringify(challenges));
+  showToast(`⏰ Gia hạn thêm ${hours}h!`,'ok');loadManage();
+}
+function viewResultsForChallenge(id){
+  document.getElementById('filterCh').value=id;
+  switchPage('results',document.querySelectorAll('.nav-item')[3]);
+  loadResults();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════════════════════════════
+async function loadResults(){
+  const filter=document.getElementById('filterCh').value;
+  const sel=document.getElementById('filterCh');
+  const existing=new Set([...sel.options].map(o=>o.value));
+  const typeLabel={sudoku:'🔢','spot-difference':'🔍','memory-match':'🃏'};
+  challenges.forEach(c=>{
+    if(!existing.has(String(c.id))){
+      const opt=document.createElement('option');
+      opt.value=c.id;
+      opt.textContent=`${typeLabel[c.type]||''} #${c.id} — ${c.title}`;
+      sel.appendChild(opt);
+    }
+  });
+
+  let scores=[];
+  try{
+    const res=await fetch(`${SCRIPT_URL}?action=getScores&key=${_key}&challengeId=${filter}&_=${Date.now()}`);
+    const data=await res.json();scores=data.scores||[];
+  }catch(e){scores=JSON.parse(localStorage.getItem('bb_scores_v2')||'[]');}
+
+  const filtered=filter==='all'?scores:scores.filter(s=>String(s.challengeId)===String(filter));
+  filtered.sort((a,b)=>a.time-b.time);
+
+  const unique=new Set(filtered.map(s=>s.name));
+  const avg=filtered.length?Math.round(filtered.reduce((s,r)=>s+r.time,0)/filtered.length):0;
+  const avgErr=filtered.length?(filtered.reduce((s,r)=>s+(+r.errors||0),0)/filtered.length).toFixed(1):0;
+  const avgHint=filtered.length?(filtered.reduce((s,r)=>s+(+r.hints||0),0)/filtered.length).toFixed(1):0;
+  document.getElementById('stTotal').textContent=filtered.length;
+  document.getElementById('stPlayers').textContent=unique.size;
+  document.getElementById('stAvg').textContent=filtered.length?formatTime(avg):'—';
+  document.getElementById('stBest').textContent=filtered.length?formatTime(filtered[0].time):'—';
+  document.getElementById('stErrors').textContent=avgErr;
+  document.getElementById('stHints').textContent=avgHint;
+
+  const area=document.getElementById('resultsArea');
+  if(!filtered.length){area.innerHTML='<p style="color:var(--t3);font-size:13px;padding:20px 0">Chưa có kết quả nào</p>';return;}
+  const ri=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+  area.innerHTML=`<table class="tbl">
+    <thead><tr><th>Hạng</th><th>Tên</th><th>Phòng ban</th><th>Ván game</th><th>Thời gian</th><th>Lỗi</th><th>Hint</th><th>Lúc</th></tr></thead>
+    <tbody>${filtered.map((s,i)=>`
+      <tr>
+        <td>${ri(i)}</td>
+        <td style="font-weight:700">${escH(s.name)}</td>
+        <td style="color:var(--t2)">${escH(s.dept||'—')}</td>
+        <td style="font-size:12px;color:var(--t2)">${escH(s.title||'—')}</td>
+        <td style="font-family:var(--mono);color:var(--orange);font-weight:500">${formatTime(+s.time)}</td>
+        <td style="color:var(--red);font-weight:700">${s.errors||0}</td>
+        <td style="color:var(--blue);font-weight:700">${s.hints||0}</td>
+        <td style="font-size:11px;color:var(--t3)">${new Date(s.timestamp).toLocaleString('vi-VN')}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function exportCSV(){
+  const scores=JSON.parse(localStorage.getItem('bb_scores_v2')||'[]');
+  const filter=document.getElementById('filterCh').value;
+  const data=filter==='all'?scores:scores.filter(s=>String(s.challengeId)===String(filter));
+  const csv=['Tên,Phòng ban,Ván game,Challenge ID,Thời gian(giây),Thời gian,Lỗi,Hint,Lúc',
+    ...data.map(s=>`${s.name},${s.dept||''},${s.title||''},${s.challengeId},${s.time},${formatTime(+s.time)},${s.errors||0},${s.hints||0},${s.timestamp}`)
+  ].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`ohmind_${Date.now()}.csv`;a.click();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  MEMORY MATCH ADMIN
+// ══════════════════════════════════════════════════════════════
+let mmCards = []; // array of URLs
+
+function initMMCards(){
+  mmCards = ['','','',''];
+  renderMMCardList();
+}
+
+function addMMCard(){
+  if(mmCards.length >= 20){ showToast('Tối đa 20 cặp thẻ!',''); return; }
+  mmCards.push('');
+  renderMMCardList();
+}
+
+function removeLastMMCard(){
+  if(mmCards.length <= 4){ showToast('Tối thiểu 4 cặp thẻ!',''); return; }
+  mmCards.pop();
+  renderMMCardList();
+  renderMMPreview();
+}
+
+function renderMMCardList(){
+  const list = document.getElementById('mmCardList');
+  list.innerHTML = mmCards.map((url,i) => `
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="background:var(--orange);color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${i+1}</span>
+      <input type="text" value="${escHAttr(url)}" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/..."
+        oninput="mmCards[${i}]=this.value" style="flex:1;font-size:12px;padding:8px 12px">
+      <button class="btn btn-secondary btn-sm" onclick="previewMMCard(${i})" style="flex-shrink:0;font-size:11px">👁</button>
+    </div>`).join('');
+}
+
+function gdriveDirect2(url){
+  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m) return 'https://drive.google.com/uc?export=view&id='+m[1];
+  return url;
+}
+
+function previewMMCard(i){
+  const url = gdriveDirect2(mmCards[i]);
+  if(!url){ showToast('Vui lòng nhập link ảnh!','bad'); return; }
+  mmCards[i] = url;
+  renderMMPreview();
+  showToast(`✅ Thẻ #${i+1} đã tải!`,'ok');
+}
+
+function renderMMPreview(){
+  const grid = document.getElementById('mmPreviewGrid');
+  const filled = mmCards.filter(u=>u);
+  if(!filled.length){ grid.innerHTML='<div style="font-size:12px;color:var(--t3);grid-column:span 3;text-align:center;padding:16px">Chưa có ảnh nào</div>'; return; }
+  grid.innerHTML = mmCards.map((url,i) => `
+    <div style="position:relative;border-radius:8px;overflow:hidden;background:var(--bg2);aspect-ratio:1;display:flex;align-items:center;justify-content:center">
+      ${url
+        ? `<img src="${escHAttr(url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<span style=\'font-size:10px;color:var(--red);padding:4px;text-align:center\'>❌ Lỗi ảnh</span>'">`
+        : `<span style="font-size:10px;color:var(--t3)">#${i+1}</span>`}
+    </div>`).join('');
+}
+
+function previewAllMMCards(){
+  mmCards = mmCards.map(u => u ? gdriveDirect2(u) : u);
+  renderMMCardList();
+  renderMMPreview();
+  showToast('✅ Đã xem trước tất cả!','ok');
+}
+
+async function publishMemory(){
+  const title = document.getElementById('mmTitle').value.trim();
+  const desc  = document.getElementById('mmDesc').value.trim();
+  const deadlineVal = document.getElementById('mmDeadline').value;
+  if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
+  if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
+  const validCards = mmCards.map(u=>gdriveDirect2(u)).filter(u=>u.trim());
+  if(validCards.length < 4){ showToast('Cần ít nhất 4 cặp thẻ có ảnh!','bad'); return; }
+
+  const ch = {
+    id: nextId++,
+    type: 'memory-match',
+    title, description: desc,
+    difficulty: 'medium',
+    seed: 0,
+    cards: validCards,
+    deadline: new Date(deadlineVal).toISOString(),
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+  challenges.push(ch);
+  localStorage.setItem('bb_challenges', JSON.stringify(challenges));
+  try{
+    await fetch(`${SCRIPT_URL}?action=setChallenge&key=${_key}&data=${encodeURIComponent(JSON.stringify(ch))}`);
+  }catch(e){ console.error(e); }
+
+  const link = location.href.replace('admin.html','game/memory-match.html');
+  document.getElementById('mmShareCard').style.display='block';
+  document.getElementById('mmShareUrl').textContent = link;
+  showToast(`🚀 Lật Thẻ #${ch.id} đã publish!`,'ok');
+
+  // Reset
+  document.getElementById('mmTitle').value='';
+  document.getElementById('mmDesc').value='';
+  mmCards=['','','',''];
+  renderMMCardList();
+  renderMMPreview();
+}
+
+function copyMMLink(){
+  navigator.clipboard.writeText(document.getElementById('mmShareUrl').textContent)
+    .then(()=>showToast('✅ Đã copy link!','ok'));
+}
+
+function escHAttr(s){ return String(s||'').replace(/"/g,'&quot;'); }
+
+// ── HELPERS ──────────────────────────────────────────────────
+function formatTime(s){return`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+function escH(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

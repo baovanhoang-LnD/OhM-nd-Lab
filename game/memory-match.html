@@ -285,8 +285,8 @@ function startGame(ch){
 function renderGame(){
   const ch = G.ch;
   const pairs = ch.cards.length;
-  const cols = pairs <= 6 ? 3 : pairs <= 8 ? 4 : pairs <= 10 ? 4 : pairs <= 12 ? 4 : 5;
-  const maxW = cols * 120 + (cols-1) * 10;
+  const cols = pairs <= 5 ? 5 : 10;
+  const maxW = cols * 120 + (cols - 1) * 10;
   const played = playedChallenges[ch.id];
 
   document.getElementById('gameArea').innerHTML = `

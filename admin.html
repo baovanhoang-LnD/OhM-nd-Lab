@@ -552,9 +552,16 @@ let spImg1Data = null;
 let spImg2Data = null;
 
 function gdriveDirect(url){
-  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if(m) return 'https://drive.google.com/uc?export=view&id='+m[1];
-  return url;
+  if(!url) return url;
+  url = String(url).trim();
+  if(/lh3\.googleusercontent\.com|drive\.google\.com\/thumbnail/.test(url)) return url;
+  if(!/drive\.google\.com/.test(url)) return url;
+  let id = null;
+  let m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m) id = m[1];
+  if(!id){ m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); if(m) id = m[1]; }
+  if(!id) return url;
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
 }
 
 function previewSpotImg(side){
@@ -895,9 +902,7 @@ function renderMMCardList(){
 }
 
 function gdriveDirect2(url){
-  const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if(m) return 'https://drive.google.com/uc?export=view&id='+m[1];
-  return url;
+  return gdriveDirect(url);
 }
 
 function previewMMCard(i){

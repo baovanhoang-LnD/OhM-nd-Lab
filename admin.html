@@ -144,6 +144,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       <div class="nav-item active" onclick="switchPage('sudoku',this)"><span>🔢</span> Sudoku</div>
       <div class="nav-item" onclick="switchPage('spot',this)"><span>🔍</span> Spot Difference</div>
       <div class="nav-item" onclick="switchPage('memory',this)"><span>🃏</span> Lật Thẻ</div>
+      <div class="nav-item" onclick="switchPage('sticker',this)"><span>🧩</span> Sticker Puzzle</div>
       <div class="sb-section" style="margin-top:8px">Quản lý</div>
       <div class="nav-item" onclick="switchPage('manage',this)"><span>📋</span> Quản lý</div>
       <div class="nav-item" onclick="switchPage('results',this)"><span>📊</span> Kết quả</div>
@@ -359,6 +360,64 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       </div>
     </div>
 
+    <!-- ══ STICKER PUZZLE ══════════════════════════════════════ -->
+    <div id="page-sticker" class="page">
+      <div class="page-hdr">
+        <h2>🧩 Tạo Sticker Puzzle</h2>
+        <p>Dán 1 link ảnh, hệ thống tự cắt thành các mảnh ghép để người chơi kéo thả</p>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-label">Thông tin ván</div>
+            <div class="form-group">
+              <label class="form-label">Tiêu đề</label>
+              <input type="text" id="stkTitle" placeholder="VD: Sticker Puzzle — Team Building 2026">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mô tả (tùy chọn)</label>
+              <input type="text" id="stkDesc" placeholder="Gợi ý hoặc chú thích...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hết hạn lúc</label>
+              <input type="datetime-local" id="stkDeadline">
+            </div>
+            <hr class="dv">
+            <div class="card-label">Ảnh ghép hình</div>
+            <div class="tip tip-blue" style="margin-bottom:10px">📌 <strong>Google Drive:</strong> Share → Anyone with link → Copy link → dán vào đây. Nên dùng ảnh vuông hoặc gần vuông để mảnh ghép đều đẹp.</div>
+            <div class="form-group">
+              <input type="text" id="stkImg" placeholder="Dán link ảnh (Google Drive hoặc Imgur)..." oninput="previewSticker()">
+            </div>
+            <hr class="dv">
+            <div class="card-label">Độ khó</div>
+            <div class="diff-grid">
+              <div class="diff-card" onclick="selStkDiff('easy',this)"><div class="di">😊</div><div class="dl">Dễ</div><div class="ds">3×3 · 9 mảnh</div></div>
+              <div class="diff-card active" onclick="selStkDiff('medium',this)"><div class="di">🤔</div><div class="dl">Vừa</div><div class="ds">4×4 · 16 mảnh</div></div>
+              <div class="diff-card" onclick="selStkDiff('hard',this)"><div class="di">😤</div><div class="dl">Khó</div><div class="ds">5×5 · 25 mảnh</div></div>
+            </div>
+            <hr class="dv">
+            <button class="btn btn-primary" onclick="publishSticker()" style="width:100%;justify-content:center">🚀 Publish</button>
+          </div>
+        </div>
+        <div class="col" style="min-width:260px">
+          <div class="card">
+            <div class="card-label">Xem trước lưới cắt</div>
+            <div class="tip" style="margin-bottom:12px">👁 Xem trước cách ảnh sẽ được cắt thành các mảnh (chỉ mang tính minh hoạ, người chơi sẽ thấy mảnh bị xáo trộn).</div>
+            <div id="stkPreviewGrid" style="display:grid;gap:2px;max-width:320px;aspect-ratio:1/1;border:2px solid var(--text);border-radius:6px;overflow:hidden">
+              <p style="color:var(--t3);font-size:13px;padding:20px;text-align:center;grid-column:1/-1">Dán link ảnh để xem trước</p>
+            </div>
+          </div>
+          <div class="card" id="stkShareCard" style="display:none">
+            <div class="card-label">🔗 Link chia sẻ</div>
+            <div class="share-box">
+              <div class="share-url" id="stkShareUrl">—</div>
+              <button class="btn btn-secondary btn-sm" onclick="copyStkLink()">📋 Copy link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ MANAGE ══════════════════════════════════════════════ -->
     <div id="page-manage" class="page">
       <div class="page-hdr">
@@ -419,6 +478,7 @@ const _key       = 'BTK2026';
 let challenges = JSON.parse(localStorage.getItem('bb_challenges')||'[]');
 let nextId = challenges.length ? Math.max(...challenges.map(c=>+c.id))+1 : 1;
 let currentDiff = 'medium';
+let stkDiff = 'medium';
 let publishedShareUrl = '';
 
 // ── LOGIN ────────────────────────────────────────────────────
@@ -463,6 +523,7 @@ window.onload=()=>{
   document.getElementById('cDeadline').value=dtVal;
   document.getElementById('spDeadline').value=dtVal;
   document.getElementById('mmDeadline').value=dtVal;
+  document.getElementById('stkDeadline').value=dtVal;
   randomSeed();
   updateSpotList();
   initMMCards();
@@ -477,6 +538,77 @@ function selDiff(d,el){
   el.classList.add('active');
 }
 function randomSeed(){ document.getElementById('cSeed').value=Math.floor(Math.random()*9000)+1; }
+
+// ── STICKER PUZZLE ──────────────────────────────────────────
+const STK_GRID = { easy:3, medium:4, hard:5 };
+
+function selStkDiff(d,el){
+  stkDiff=d;
+  el.closest('.diff-grid').querySelectorAll('.diff-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  previewSticker();
+}
+
+function previewSticker(){
+  const url = gdriveDirect(document.getElementById('stkImg').value.trim());
+  const grid = document.getElementById('stkPreviewGrid');
+  const n = STK_GRID[stkDiff];
+  if(!url){
+    grid.style.gridTemplateColumns='';
+    grid.innerHTML='<p style="color:var(--t3);font-size:13px;padding:20px;text-align:center;grid-column:1/-1">Dán link ảnh để xem trước</p>';
+    return;
+  }
+  grid.style.gridTemplateColumns = `repeat(${n},1fr)`;
+  let cells='';
+  for(let r=0;r<n;r++){
+    for(let c=0;c<n;c++){
+      cells += `<div style="aspect-ratio:1/1;background-image:url('${url}');background-size:${n*100}% ${n*100}%;background-position:${n>1?(c/(n-1))*100:0}% ${n>1?(r/(n-1))*100:0}%"></div>`;
+    }
+  }
+  grid.innerHTML = cells;
+}
+
+async function publishSticker(){
+  const title = document.getElementById('stkTitle').value.trim();
+  const desc  = document.getElementById('stkDesc').value.trim();
+  const deadlineVal = document.getElementById('stkDeadline').value;
+  const img = gdriveDirect(document.getElementById('stkImg').value.trim());
+  if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
+  if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
+  if(!img){ showToast('Vui lòng dán link ảnh!','bad'); return; }
+
+  const ch = {
+    id: nextId++,
+    type: 'sticker-puzzle',
+    title, description: desc,
+    difficulty: stkDiff,
+    gridSize: STK_GRID[stkDiff],
+    image: img,
+    deadline: new Date(deadlineVal).toISOString(),
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+  challenges.push(ch);
+  localStorage.setItem('bb_challenges', JSON.stringify(challenges));
+  try{
+    await fetch(`${SCRIPT_URL}?action=setChallenge&key=${_key}&data=${encodeURIComponent(JSON.stringify(ch))}`);
+  }catch(e){ console.error(e); }
+
+  const link = location.href.replace('admin.html','game/sticker-puzzle.html');
+  document.getElementById('stkShareCard').style.display='block';
+  document.getElementById('stkShareUrl').textContent = link;
+  showToast(`🚀 Sticker Puzzle #${ch.id} đã publish!`,'ok');
+
+  document.getElementById('stkTitle').value='';
+  document.getElementById('stkDesc').value='';
+  document.getElementById('stkImg').value='';
+  previewSticker();
+}
+
+function copyStkLink(){
+  navigator.clipboard.writeText(document.getElementById('stkShareUrl').textContent)
+    .then(()=>showToast('📋 Đã copy link!','ok'));
+}
 
 function previewChallenge(){
   const seed=+document.getElementById('cSeed').value||1;
@@ -732,7 +864,7 @@ function loadManage(){
   const active=challenges.filter(c=>c.status==='active'&&new Date(c.deadline)>now);
   document.getElementById('activeCount').textContent=active.length;
   const al=document.getElementById('activeList');
-  const typeLabel={sudoku:'🔢 Sudoku','spot-difference':'🔍 Spot','memory-match':'🃏 Lật Thẻ'};
+  const typeLabel={sudoku:'🔢 Sudoku','spot-difference':'🔍 Spot','memory-match':'🃏 Lật Thẻ','sticker-puzzle':'🧩 Sticker Puzzle'};
   if(!active.length){
     al.innerHTML='<div style="text-align:center;padding:24px;color:var(--t3)">😴 Không có ván nào đang active</div>';
   }else{
@@ -805,7 +937,7 @@ async function loadResults(){
   const filter=document.getElementById('filterCh').value;
   const sel=document.getElementById('filterCh');
   const existing=new Set([...sel.options].map(o=>o.value));
-  const typeLabel={sudoku:'🔢','spot-difference':'🔍','memory-match':'🃏'};
+  const typeLabel={sudoku:'🔢','spot-difference':'🔍','memory-match':'🃏','sticker-puzzle':'🧩'};
   challenges.forEach(c=>{
     if(!existing.has(String(c.id))){
       const opt=document.createElement('option');

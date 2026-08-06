@@ -7,8 +7,6 @@
 <link rel="icon" type="image/png" href="../pic/Favicon1.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
 /* ── SPOT DIFFERENCE SPECIFIC ─────────────────────────────────── */
 
@@ -35,33 +33,6 @@
   .sd-stage{flex-direction:column;}
   .sd-panel{max-width:none;}
 }
-
-/* ── DUEL (1vs1) ─────────────────────────────────────────────── */
-.duel-hero{text-align:center;padding:36px 20px;max-width:420px;margin:0 auto;}
-.duel-hero-icon{font-size:44px;margin-bottom:12px;}
-.duel-hero p{color:var(--t2);font-size:14px;line-height:1.6;margin-bottom:22px;}
-
-.duel-search-spin{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px;}
-.duel-search-time{font-family:var(--mono);color:var(--t3);font-size:13px;margin-bottom:18px;}
-
-.duel-vs-row{display:flex;align-items:center;justify-content:center;gap:24px;margin:24px 0;}
-.duel-avatar{width:60px;height:60px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;margin:0 auto 8px;}
-.duel-avatar.opp{background:var(--blue);}
-.duel-vs-name{font-size:13px;font-weight:700;text-align:center;}
-.duel-vs-text{font-family:var(--mono);font-size:18px;color:var(--t3);font-weight:700;}
-
-.countdown-big{font-family:var(--mono);font-size:64px;font-weight:500;color:var(--orange);text-align:center;margin:10px 0;}
-
-.duel-progressbars{display:flex;gap:12px;margin-bottom:14px;}
-.duel-pbar{flex:1;background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow);}
-.duel-pbar.me{border-color:var(--orange);}
-.duel-pbar.opp{border-color:var(--blue);}
-.duel-pbar-name{font-size:11px;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
-.duel-pbar-track{height:7px;background:var(--bg2);border-radius:999px;overflow:hidden;}
-.duel-pbar-fill{height:100%;border-radius:999px;transition:width .3s ease;background:var(--orange);}
-.duel-pbar.opp .duel-pbar-fill{background:var(--blue);}
-
-.duel-result-icon{font-size:52px;text-align:center;margin:8px 0 6px;}
 </style>
 </head>
 <body>
@@ -109,7 +80,6 @@
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('play',this)">🔍 Chơi ngay</button>
-  <button class="tab" onclick="switchTab('duel',this)">⚔️ Đối kháng</button>
   <button class="tab" onclick="switchTab('lb',this);loadLB()">🏆 Xếp hạng</button>
 </div>
 
@@ -131,95 +101,6 @@
       </div>
       <div id="gameArea"></div>
     </div>
-  </div>
-
-  <!-- DUEL PAGE (1vs1 realtime) -->
-  <div id="page-duel" class="page">
-
-    <div id="duel-idle" class="duel-hero">
-      <div class="duel-hero-icon">⚔️</div>
-      <h2 style="margin-bottom:8px">Đối kháng 1vs1</h2>
-      <p>Hệ thống sẽ tự động ghép bạn với người chơi khác đang tìm đối thủ. Cả 2 nhận cùng 1 thử thách, ai tìm đủ điểm khác biệt trước — thắng!</p>
-      <button class="btn btn-primary" onclick="findOpponent()">🔎 Tìm đối thủ ngay</button>
-    </div>
-
-    <div id="duel-searching" class="duel-hero" style="display:none">
-      <div class="duel-search-spin"></div>
-      <h2 style="margin-bottom:8px">Đang tìm đối thủ...</h2>
-      <div class="duel-search-time" id="duelSearchTime">Đã chờ 0s</div>
-      <button class="btn btn-secondary" onclick="cancelSearch()">Hủy tìm</button>
-    </div>
-
-    <div id="duel-countdown" class="duel-hero" style="display:none">
-      <div class="duel-vs-row">
-        <div>
-          <div class="duel-avatar" id="cdAvMe">?</div>
-          <div class="duel-vs-name" id="cdNameMe">Bạn</div>
-        </div>
-        <div class="duel-vs-text">VS</div>
-        <div>
-          <div class="duel-avatar opp" id="cdAvOpp">?</div>
-          <div class="duel-vs-name" id="cdNameOpp">Đối thủ</div>
-        </div>
-      </div>
-      <div class="countdown-big" id="cdNumber">3</div>
-      <p>Chuẩn bị tìm điểm khác biệt!</p>
-    </div>
-
-    <div id="duel-match" style="display:none">
-      <div class="duel-progressbars">
-        <div class="duel-pbar me">
-          <div class="duel-pbar-name"><span id="dpNameMe">Bạn</span><span id="dpFoundMe">0/10</span></div>
-          <div class="duel-pbar-track"><div class="duel-pbar-fill" id="dpFillMe" style="width:0%"></div></div>
-        </div>
-        <div class="duel-pbar opp">
-          <div class="duel-pbar-name"><span id="dpNameOpp">Đối thủ</span><span id="dpFoundOpp">0/10</span></div>
-          <div class="duel-pbar-track"><div class="duel-pbar-fill" id="dpFillOpp" style="width:0%"></div></div>
-        </div>
-      </div>
-      <div class="timer-bar">
-        <div class="game-timer" id="duelTimer">00:00</div>
-        <div class="stats-row"><span class="stat-chip err">❌ <span id="duelErrors">0</span> nhầm</span></div>
-      </div>
-      <div class="sd-stage">
-        <div class="sd-panel">
-          <div class="sd-label">Ảnh gốc</div>
-          <div class="sd-imgwrap" id="duel-wrap-left">
-            <span class="sd-empty">⏳ Đang tải ảnh...</span>
-            <img id="duel-img-left" style="display:none" draggable="false" alt="Ảnh gốc">
-            <div class="sd-markers" id="duel-markers-left"></div>
-          </div>
-        </div>
-        <div class="sd-panel">
-          <div class="sd-label">Ảnh đã chỉnh — click để tìm</div>
-          <div class="sd-imgwrap" id="duel-wrap-right">
-            <span class="sd-empty">⏳ Đang tải ảnh...</span>
-            <img id="duel-img-right" style="display:none" draggable="false" alt="Ảnh đã chỉnh">
-            <div class="sd-markers" id="duel-markers-right"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="duel-result" class="duel-hero" style="display:none">
-      <div class="duel-result-icon" id="drIcon">🏆</div>
-      <h2 id="drTitle" style="margin-bottom:16px">Bạn thắng!</h2>
-      <div class="duel-progressbars" style="text-align:left">
-        <div class="duel-pbar me">
-          <div class="duel-pbar-name"><span id="drNameMe">Bạn</span></div>
-          <div style="font-size:12px;color:var(--t2)">🎯 <span id="drFoundMe">0</span>/10 · ❌ <span id="drErrMe">0</span> lỗi · ⏱ <span id="drTimeMe">00:00</span></div>
-        </div>
-        <div class="duel-pbar opp">
-          <div class="duel-pbar-name"><span id="drNameOpp">Đối thủ</span></div>
-          <div style="font-size:12px;color:var(--t2)">🎯 <span id="drFoundOpp">0</span>/10 · ❌ <span id="drErrOpp">0</span> lỗi · ⏱ <span id="drTimeOpp">00:00</span></div>
-        </div>
-      </div>
-      <div style="display:flex;gap:9px;justify-content:center;margin-top:6px">
-        <button class="btn btn-primary" onclick="rematch()">⚔️ Đấu tiếp</button>
-        <button class="btn btn-secondary" onclick="switchTab('play',document.querySelector('.tab'))">← Về danh sách</button>
-      </div>
-    </div>
-
   </div>
 
   <!-- LEADERBOARD PAGE -->
@@ -255,36 +136,12 @@
 const _cfg = 'https://script.google.com/macros/s/AKfycby2iK5X78FucVv36FcgyKPJiEopb9gdQMpD6V11QWAnMYpNo09yetHe11V3TtNjvbwG/exec';
 const _key = 'BTK2026';
 
-// Dán config Firebase của bạn vào đây (Project settings → Your apps → </>)
-const _fbcfg = {
-  apiKey: "DÁN_API_KEY_VÀO_ĐÂY",
-  authDomain: "DÁN_AUTH_DOMAIN_VÀO_ĐÂY",
-  databaseURL: "DÁN_DATABASE_URL_VÀO_ĐÂY",
-  projectId: "DÁN_PROJECT_ID_VÀO_ĐÂY",
-  storageBucket: "DÁN_STORAGE_BUCKET_VÀO_ĐÂY",
-  messagingSenderId: "DÁN_SENDER_ID_VÀO_ĐÂY",
-  appId: "DÁN_APP_ID_VÀO_ĐÂY"
-};
-let fbdb = null;
-try{
-  firebase.initializeApp(_fbcfg);
-  fbdb = firebase.database();
-}catch(e){ console.warn('Firebase chưa được cấu hình:', e.message); }
-
-// Định danh ẩn danh cho thiết bị này (dùng để ghép trận, không phải tài khoản)
-let clientUid = localStorage.getItem('bb_uid');
-if(!clientUid){
-  clientUid = 'u' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-  localStorage.setItem('bb_uid', clientUid);
-}
-
 // ── STATE ───────────────────────────────────────────────────
 let playerName = localStorage.getItem('bb_name') || '';
 let playerDept = localStorage.getItem('bb_dept') || '';
 let challenges = [];
 let playedChallenges = JSON.parse(localStorage.getItem('bb_spot_played') || '{}');
 let G = {};
-let D = {}; // trạng thái đối kháng (duel)
 let _allScores = [], _allGroups = {};
 
 // ── BOOT ────────────────────────────────────────────────────
@@ -293,9 +150,6 @@ window.onload = () => {
   updateHeader();
   fetchChallenges();
 };
-window.addEventListener('beforeunload', () => {
-  if(D.myQueueKey && fbdb) fbdb.ref('duelQueue/'+D.myQueueKey).remove();
-});
 
 // ── PLAYER ──────────────────────────────────────────────────
 function showModal(id){ document.getElementById(id).classList.remove('hidden'); }
@@ -309,14 +163,11 @@ function updateHeader(){
 
 // ── TABS ────────────────────────────────────────────────────
 function switchTab(name, el){
-  const leaving = document.querySelector('.page.active')?.id;
-  if(leaving==='page-duel' && name!=='duel') leaveDuel();
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
   if(name==='play') backToList();
-  if(name==='duel') showDuelView('idle');
 }
 
 // ── FETCH CHALLENGES ────────────────────────────────────────
@@ -590,327 +441,6 @@ function backToList(){
   document.getElementById('gameView').style.display='none';
   document.getElementById('listView').style.display='block';
   fetchChallenges();
-}
-
-// ══════════════════════════════════════════════════════════════
-//  DUEL ENGINE (1vs1 realtime qua Firebase)
-// ══════════════════════════════════════════════════════════════
-function showDuelView(view){
-  ['idle','searching','countdown','match','result'].forEach(v=>{
-    document.getElementById('duel-'+v).style.display = (v===view ? (v==='match'?'block':'block') : 'none');
-  });
-}
-
-function requireFirebase(){
-  if(!fbdb){ showToast('❌ Chưa cấu hình Firebase cho tính năng đối kháng','bad'); return false; }
-  return true;
-}
-
-// ── Tìm đối thủ ─────────────────────────────────────────────
-function findOpponent(){
-  if(!requireFirebase()) return;
-  if(!challenges.length){ showToast('❌ Chưa có thử thách nào để đấu!','bad'); return; }
-
-  D = { matching:false };
-  showDuelView('searching');
-  D.searchStart = Date.now();
-  D.searchTimer = setInterval(updateSearchElapsed, 1000);
-  updateSearchElapsed();
-
-  const myRef = fbdb.ref('duelQueue').push();
-  D.myQueueKey = myRef.key;
-  myRef.set({ uid:clientUid, name:playerName, dept:playerDept||'', ts:Date.now(), status:'waiting', matchId:null });
-
-  // Nghe chính bản ghi của mình để biết khi nào được ghép trận
-  D.myQueueListener = fbdb.ref('duelQueue/'+D.myQueueKey).on('value', snap=>{
-    const v = snap.val();
-    if(v && v.status==='matched' && v.matchId){
-      stopSearching(false);
-      joinDuel(v.matchId);
-    }
-  });
-
-  // Nghe danh sách người đang chờ để chủ động ghép
-  D.queueListRef = fbdb.ref('duelQueue').orderByChild('status').equalTo('waiting');
-  D.queueListListener = D.queueListRef.on('value', snap=>{
-    const all = snap.val()||{};
-    const candidates = Object.entries(all)
-      .filter(([k,v]) => k!==D.myQueueKey && v.uid!==clientUid)
-      .sort((a,b)=>a[1].ts-b[1].ts);
-    if(candidates.length) tryMatch(candidates[0][0]);
-  });
-}
-
-function updateSearchElapsed(){
-  const el = document.getElementById('duelSearchTime');
-  if(!el || !D.searchStart) return;
-  el.textContent = `Đã chờ ${Math.floor((Date.now()-D.searchStart)/1000)}s`;
-}
-
-function tryMatch(candidateKey){
-  if(D.matching) return;
-  D.matching = true;
-  fbdb.ref('duelQueue/'+candidateKey+'/status').transaction(cur=>{
-    if(cur==='waiting') return 'matched';
-    return; // huỷ giao dịch — ai đó đã ghép trước
-  }, (err, committed)=>{
-    D.matching = false;
-    if(err || !committed) return; // trượt tay, người khác lấy mất, tiếp tục chờ
-    createDuel(candidateKey);
-  });
-}
-
-function createDuel(candidateKey){
-  fbdb.ref('duelQueue/'+candidateKey).once('value', snap=>{
-    const opp = snap.val();
-    if(!opp) return;
-    const ch = challenges[Math.floor(Math.random()*challenges.length)];
-    const matchRef = fbdb.ref('duels').push();
-    const matchId = matchRef.key;
-    const duelData = {
-      createdAt: Date.now(),
-      startAt: Date.now()+4000,
-      timeLimit: ch.timeLimit||180,
-      challenge: { id:ch.id, title:ch.title, imgOriginal:ch.imgOriginal, imgModified:ch.imgModified, spots:ch.spots||[] },
-      players: {
-        a: { uid:clientUid, name:playerName, dept:playerDept||'' },
-        b: { uid:opp.uid, name:opp.name, dept:opp.dept||'' }
-      },
-      progress: {
-        a: { found:0, errors:0, doneAt:null },
-        b: { found:0, errors:0, doneAt:null }
-      },
-      status: 'countdown', result: null
-    };
-    matchRef.set(duelData).then(()=>{
-      fbdb.ref('duelQueue/'+candidateKey).update({ matchId });
-      fbdb.ref('duelQueue/'+D.myQueueKey).update({ status:'matched', matchId });
-    });
-  });
-}
-
-function stopSearching(removeFromQueue){
-  if(D.myQueueListener) fbdb.ref('duelQueue/'+D.myQueueKey).off('value', D.myQueueListener);
-  if(D.queueListListener && D.queueListRef) D.queueListRef.off('value', D.queueListListener);
-  if(D.searchTimer) clearInterval(D.searchTimer);
-  if(removeFromQueue && D.myQueueKey) fbdb.ref('duelQueue/'+D.myQueueKey).remove();
-}
-
-function cancelSearch(){
-  stopSearching(true);
-  D = {};
-  showDuelView('idle');
-}
-
-function leaveDuel(){
-  if(D.myQueueKey) stopSearching(true);
-  if(D.matchListener && D.matchRef) D.matchRef.off('value', D.matchListener);
-  if(D.countdownTimer) clearInterval(D.countdownTimer);
-  D = {};
-}
-
-// ── Vào trận ────────────────────────────────────────────────
-function joinDuel(matchId){
-  D.matchId = matchId;
-  D.mySlot = null;
-  D.built = false;
-  D.matchRef = fbdb.ref('duels/'+matchId);
-  D.matchListener = D.matchRef.on('value', snap=>{
-    const v = snap.val();
-    if(!v) return;
-    D.match = v;
-    if(!D.mySlot){
-      if(v.players.a.uid===clientUid) D.mySlot='a';
-      else if(v.players.b.uid===clientUid) D.mySlot='b';
-      if(!D.mySlot) return; // dữ liệu chưa đồng bộ đủ, đợi lần tiếp theo
-      D.oppSlot = D.mySlot==='a' ? 'b' : 'a';
-    }
-    onDuelUpdate();
-  });
-}
-
-function onDuelUpdate(){
-  const v = D.match;
-  if(v.status==='countdown'){
-    showDuelView('countdown');
-    document.getElementById('cdNameMe').textContent = v.players[D.mySlot].name;
-    document.getElementById('cdAvMe').textContent = (v.players[D.mySlot].name||'?')[0].toUpperCase();
-    document.getElementById('cdNameOpp').textContent = v.players[D.oppSlot].name;
-    document.getElementById('cdAvOpp').textContent = (v.players[D.oppSlot].name||'?')[0].toUpperCase();
-    if(!D.countdownTimer){
-      D.countdownTimer = setInterval(()=>{
-        const left = Math.ceil((v.startAt-Date.now())/1000);
-        const numEl = document.getElementById('cdNumber');
-        if(left>0){ numEl.textContent = left; }
-        else{
-          clearInterval(D.countdownTimer); D.countdownTimer=null;
-          if(D.mySlot==='a') D.matchRef.update({status:'active'}); // chỉ 1 bên cần set, bên kia idempotent
-          startDuelMatch();
-        }
-      }, 200);
-    }
-  }else if(v.status==='active'){
-    if(!D.built){ startDuelMatch(); }
-    else{ updateDuelProgressUI(); checkDuelEnd(); }
-  }else if(v.status==='done'){
-    if(D.countdownTimer){ clearInterval(D.countdownTimer); D.countdownTimer=null; }
-    renderDuelResult();
-  }
-}
-
-function startDuelMatch(){
-  if(D.built) return;
-  D.built = true;
-  D.localFound = new Set();
-  D.localErrors = 0;
-  TOTAL_SPOTS = (D.match.challenge.spots && D.match.challenge.spots.length) || 10;
-  showDuelView('match');
-
-  const ch = D.match.challenge;
-  document.getElementById('dpNameMe').textContent = D.match.players[D.mySlot].name;
-  document.getElementById('dpNameOpp').textContent = D.match.players[D.oppSlot].name;
-
-  setupDuelPanel('left', toDriveImg(ch.imgOriginal));
-  setupDuelPanel('right', toDriveImg(ch.imgModified));
-
-  D.tickTimer = setInterval(()=>{
-    const left = Math.max(0, D.match.timeLimit - Math.floor((Date.now()-D.match.startAt)/1000));
-    const el = document.getElementById('duelTimer');
-    if(el) el.textContent = formatTime(left);
-    if(left<=0) checkDuelEnd(true);
-  }, 500);
-}
-
-function setupDuelPanel(side, url){
-  const wrap = document.getElementById('duel-wrap-'+side);
-  const img = document.getElementById('duel-img-'+side);
-  img.onload = () => { img.style.display='block'; const s=wrap.querySelector('.sd-empty'); if(s) s.style.display='none'; };
-  img.onerror = () => { const s=wrap.querySelector('.sd-empty'); if(s) s.textContent='❌ Không tải được ảnh'; };
-  img.src = url || '';
-  wrap.onclick = (e) => handleDuelClick(side, e);
-}
-
-function handleDuelClick(side, e){
-  if(D.match.status!=='active' && D.match.status!=='countdown') return;
-  const img = document.getElementById('duel-img-'+side);
-  if(!img || img.style.display==='none') return;
-  const rect = img.getBoundingClientRect();
-  const pctX = (e.clientX-rect.left)/rect.width;
-  const pctY = (e.clientY-rect.top)/rect.height;
-  if(pctX<0||pctX>1||pctY<0||pctY>1) return;
-
-  const spots = D.match.challenge.spots||[];
-  const tolerance = ((rect.width+rect.height)/2) * HIT_TOLERANCE;
-  const xKey = side==='left' ? 'leftX' : 'rightX';
-  const yKey = side==='left' ? 'leftY' : 'rightY';
-
-  let hitIdx=-1, hitDist=Infinity;
-  spots.forEach((s,i)=>{
-    const dx=(pctX-s[xKey])*rect.width, dy=(pctY-s[yKey])*rect.height;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<=tolerance && dist<hitDist){ hitDist=dist; hitIdx=i; }
-  });
-
-  if(hitIdx===-1){
-    D.localErrors++;
-    document.getElementById('duelErrors').textContent = D.localErrors;
-    showMissAt('duel-markers-'+side, pctX, pctY);
-    D.matchRef.child('progress/'+D.mySlot+'/errors').set(D.localErrors);
-    return;
-  }
-  if(D.localFound.has(hitIdx)) return;
-
-  D.localFound.add(hitIdx);
-  markFoundOn('duel-markers-left','duel-markers-right', hitIdx, spots[hitIdx]);
-  const found = D.localFound.size;
-  document.getElementById('dpFoundMe').textContent = found+'/'+TOTAL_SPOTS;
-  document.getElementById('dpFillMe').style.width = (found/TOTAL_SPOTS*100)+'%';
-
-  const upd = { found };
-  if(found>=TOTAL_SPOTS) upd.doneAt = Date.now();
-  D.matchRef.child('progress/'+D.mySlot).update(upd);
-
-  if(found>=TOTAL_SPOTS) checkDuelEnd();
-}
-
-function showMissAt(holderId, pctX, pctY){
-  const holder = document.getElementById(holderId); if(!holder) return;
-  const m=document.createElement('div'); m.className='sd-miss';
-  m.style.left=(pctX*100)+'%'; m.style.top=(pctY*100)+'%'; m.textContent='✕';
-  holder.appendChild(m); setTimeout(()=>m.remove(),600);
-}
-
-function markFoundOn(leftId, rightId, idx, spot){
-  [[leftId,'leftX','leftY'],[rightId,'rightX','rightY']].forEach(([id,xk,yk])=>{
-    const holder=document.getElementById(id); if(!holder) return;
-    const m=document.createElement('div'); m.className='sd-marker';
-    m.style.left=(spot[xk]*100)+'%'; m.style.top=(spot[yk]*100)+'%'; m.textContent=idx+1;
-    holder.appendChild(m);
-  });
-}
-
-function updateDuelProgressUI(){
-  const opp = D.match.progress[D.oppSlot]||{found:0,errors:0};
-  const foundOpp = opp.found||0;
-  document.getElementById('dpFoundOpp').textContent = foundOpp+'/'+TOTAL_SPOTS;
-  document.getElementById('dpFillOpp').style.width = (foundOpp/TOTAL_SPOTS*100)+'%';
-}
-
-function checkDuelEnd(timeUp){
-  if(!D.match || D.match.status==='done' || D.ended) return;
-  const me = D.match.progress[D.mySlot]||{found:0,errors:0,doneAt:null};
-  const opp = D.match.progress[D.oppSlot]||{found:0,errors:0,doneAt:null};
-  const myFound = D.mySlot ? (D.localFound?D.localFound.size:me.found) : me.found;
-
-  let finished = (me.doneAt || opp.doneAt);
-  if(!finished && !timeUp) return;
-
-  D.ended = true;
-  if(D.tickTimer) clearInterval(D.tickTimer);
-
-  let winner;
-  if(me.doneAt && opp.doneAt) winner = me.doneAt<opp.doneAt ? D.mySlot : D.oppSlot;
-  else if(me.doneAt) winner = D.mySlot;
-  else if(opp.doneAt) winner = D.oppSlot;
-  else{
-    // hết giờ, cả 2 chưa xong — so found, rồi so errors
-    if(myFound !== opp.found) winner = myFound>opp.found ? D.mySlot : D.oppSlot;
-    else if((me.errors||0) !== (opp.errors||0)) winner = (me.errors||0)<(opp.errors||0) ? D.mySlot : D.oppSlot;
-    else winner = 'draw';
-  }
-
-  const result = {
-    winner,
-    endedAt: Date.now(),
-    a: D.mySlot==='a' ? {found:myFound, errors:D.localErrors, doneAt:me.doneAt||null} : {found:opp.found, errors:opp.errors, doneAt:opp.doneAt||null},
-    b: D.mySlot==='b' ? {found:myFound, errors:D.localErrors, doneAt:me.doneAt||null} : {found:opp.found, errors:opp.errors, doneAt:opp.doneAt||null}
-  };
-  D.matchRef.update({ status:'done', result });
-}
-
-function renderDuelResult(){
-  const v = D.match, r = v.result;
-  if(!r) return;
-  const meWin = r.winner===D.mySlot, draw = r.winner==='draw';
-  document.getElementById('drIcon').textContent = draw ? '🤝' : (meWin ? '🏆' : '😢');
-  document.getElementById('drTitle').textContent = draw ? 'Hoà!' : (meWin ? 'Bạn thắng!' : 'Bạn thua!');
-  const me = r[D.mySlot], opp = r[D.oppSlot];
-  const t0 = v.startAt;
-  document.getElementById('drNameMe').textContent = v.players[D.mySlot].name+' (bạn)';
-  document.getElementById('drNameOpp').textContent = v.players[D.oppSlot].name;
-  document.getElementById('drFoundMe').textContent = me.found||0;
-  document.getElementById('drErrMe').textContent = me.errors||0;
-  document.getElementById('drTimeMe').textContent = me.doneAt ? formatTime(Math.round((me.doneAt-t0)/1000)) : '—';
-  document.getElementById('drFoundOpp').textContent = opp.found||0;
-  document.getElementById('drErrOpp').textContent = opp.errors||0;
-  document.getElementById('drTimeOpp').textContent = opp.doneAt ? formatTime(Math.round((opp.doneAt-t0)/1000)) : '—';
-  showDuelView('result');
-}
-
-function rematch(){
-  leaveDuel();
-  showDuelView('idle');
-  setTimeout(findOpponent, 100);
 }
 
 // ── LEADERBOARD ─────────────────────────────────────────────

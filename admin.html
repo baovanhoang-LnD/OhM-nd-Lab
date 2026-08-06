@@ -248,6 +248,10 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
                 <span style="font-size:13px;color:var(--t3);font-weight:700;min-width:45px" id="spTimeDisplay">= 3:00</span>
               </div>
             </div>
+            <div class="form-group">
+              <label class="form-label">Số điểm khác biệt</label>
+              <input type="number" id="spTargetCount" value="10" min="3" max="40" oninput="onSpTargetChange()">
+            </div>
             <hr class="dv">
             <div class="card-label">Link ảnh</div>
             <div class="form-group">
@@ -260,7 +264,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <input type="text" id="spImg2" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
               <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(2)" style="margin-top:6px">👁 Xem trước ảnh phải</button>
             </div>
-            <div class="tip">💡 Sau khi xem trước, click vào <strong>ảnh phải</strong> để đánh dấu 10 điểm khác biệt.</div>
+            <div class="tip">💡 Sau khi xem trước, click vào <strong>ảnh phải</strong> để đánh dấu đủ số điểm khác biệt đã chọn.</div>
             <div class="tip tip-blue" style="margin-top:6px">📌 <strong>Google Drive:</strong> Share → Anyone with link → Copy link → dán vào đây. Hệ thống tự chuyển sang link trực tiếp.</div>
             <hr class="dv">
             <button class="btn btn-primary" onclick="publishSpot()" style="width:100%;justify-content:center">🚀 Publish</button>
@@ -275,7 +279,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
                 <button class="btn btn-secondary btn-sm" onclick="clearSpots()">Xóa hết</button>
               </div>
             </div>
-            <div class="tip" style="margin-bottom:12px">👆 Click vào <strong>ảnh phải</strong> để đánh dấu từng điểm. Cần đủ 10 điểm mới publish được.</div>
+            <div class="tip" style="margin-bottom:12px">👆 Click vào <strong>ảnh phải</strong> để đánh dấu từng điểm. Cần đủ số điểm đã chọn ở bên trái mới publish được.</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
               <div>
                 <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ảnh gốc</div>
@@ -364,7 +368,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
     <div id="page-sticker" class="page">
       <div class="page-hdr">
         <h2>🧩 Tạo Sticker Puzzle</h2>
-        <p>Dán 1 link ảnh, hệ thống tự cắt thành các mảnh ghép để người chơi kéo thả</p>
+        <p>Dán ảnh nền (đã có sẵn mảng trống bóng trắng) + từng sticker rời, đánh dấu vị trí đúng của mỗi sticker</p>
       </div>
       <div class="row">
         <div class="col">
@@ -383,28 +387,42 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <input type="datetime-local" id="stkDeadline">
             </div>
             <hr class="dv">
-            <div class="card-label">Ảnh ghép hình</div>
-            <div class="tip tip-blue" style="margin-bottom:10px">📌 <strong>Google Drive:</strong> Share → Anyone with link → Copy link → dán vào đây. Nên dùng ảnh vuông hoặc gần vuông để mảnh ghép đều đẹp.</div>
+            <div class="card-label">Bước 1 — Ảnh nền</div>
+            <div class="tip tip-blue" style="margin-bottom:10px">📌 Ảnh nền cần có sẵn các mảng trống hình bóng trắng do bạn thiết kế trước (Photoshop/Figma...).</div>
             <div class="form-group">
-              <input type="text" id="stkImg" placeholder="Dán link ảnh (Google Drive hoặc Imgur)..." oninput="previewSticker()">
+              <input type="text" id="stkBgUrl" placeholder="Dán link ảnh nền..." oninput="renderStkPreview()">
             </div>
             <hr class="dv">
-            <div class="card-label">Độ khó</div>
-            <div class="diff-grid">
-              <div class="diff-card" onclick="selStkDiff('easy',this)"><div class="di">😊</div><div class="dl">Dễ</div><div class="ds">3×3 · 9 mảnh</div></div>
-              <div class="diff-card active" onclick="selStkDiff('medium',this)"><div class="di">🤔</div><div class="dl">Vừa</div><div class="ds">4×4 · 16 mảnh</div></div>
-              <div class="diff-card" onclick="selStkDiff('hard',this)"><div class="di">😤</div><div class="dl">Khó</div><div class="ds">5×5 · 25 mảnh</div></div>
+            <div class="card-label">Bước 2 — Thêm từng sticker</div>
+            <div class="tip" style="margin-bottom:10px">💡 Dán link 1 sticker → nhập kích thước ước lượng → <strong>bấm vào đúng vị trí trên ảnh nền bên phải</strong> để đánh dấu. Lặp lại cho từng sticker.</div>
+            <div class="form-group">
+              <label class="form-label">Link sticker hiện tại</label>
+              <input type="text" id="stkPieceUrl" placeholder="Dán link ảnh sticker...">
             </div>
+            <div style="display:flex;gap:8px">
+              <div class="form-group" style="flex:1">
+                <label class="form-label">Số hiệu</label>
+                <input type="number" id="stkPieceNum" value="1">
+              </div>
+              <div class="form-group" style="flex:1">
+                <label class="form-label">Kích thước (% chiều rộng ảnh nền)</label>
+                <input type="number" id="stkPieceSize" value="10" min="2" max="50">
+              </div>
+            </div>
+            <div class="tip" id="stkMarkHint" style="margin-bottom:8px">👉 Dán link sticker ở trên, rồi bấm vào ảnh nền bên phải để đặt vị trí.</div>
+            <hr class="dv">
+            <div class="card-label">Danh sách sticker đã đánh dấu (<span id="stkCount">0</span>)</div>
+            <div id="stkList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;margin-bottom:12px"></div>
             <hr class="dv">
             <button class="btn btn-primary" onclick="publishSticker()" style="width:100%;justify-content:center">🚀 Publish</button>
           </div>
         </div>
-        <div class="col" style="min-width:260px">
+        <div class="col" style="min-width:280px">
           <div class="card">
-            <div class="card-label">Xem trước lưới cắt</div>
-            <div class="tip" style="margin-bottom:12px">👁 Xem trước cách ảnh sẽ được cắt thành các mảnh (chỉ mang tính minh hoạ, người chơi sẽ thấy mảnh bị xáo trộn).</div>
-            <div id="stkPreviewGrid" style="display:grid;gap:2px;max-width:320px;aspect-ratio:1/1;border:2px solid var(--text);border-radius:6px;overflow:hidden">
-              <p style="color:var(--t3);font-size:13px;padding:20px;text-align:center;grid-column:1/-1">Dán link ảnh để xem trước</p>
+            <div class="card-label">Ảnh nền — bấm để đánh dấu vị trí sticker</div>
+            <div class="tip" style="margin-bottom:12px">👁 Mỗi lần bấm vào ảnh sẽ thêm 1 sticker mới tại đúng điểm bấm, dùng link + số hiệu + kích thước đang nhập ở bên trái.</div>
+            <div id="stkPreviewWrap" style="position:relative;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg2);min-height:160px;display:flex;align-items:center;justify-content:center;cursor:crosshair">
+              <span style="color:var(--t3);font-size:13px;padding:24px">Dán link ảnh nền để bắt đầu đánh dấu</span>
             </div>
           </div>
           <div class="card" id="stkShareCard" style="display:none">
@@ -478,7 +496,6 @@ const _key       = 'BTK2026';
 let challenges = JSON.parse(localStorage.getItem('bb_challenges')||'[]');
 let nextId = challenges.length ? Math.max(...challenges.map(c=>+c.id))+1 : 1;
 let currentDiff = 'medium';
-let stkDiff = 'medium';
 let publishedShareUrl = '';
 
 // ── LOGIN ────────────────────────────────────────────────────
@@ -539,51 +556,96 @@ function selDiff(d,el){
 }
 function randomSeed(){ document.getElementById('cSeed').value=Math.floor(Math.random()*9000)+1; }
 
-// ── STICKER PUZZLE ──────────────────────────────────────────
-const STK_GRID = { easy:3, medium:4, hard:5 };
+// ── STICKER PUZZLE (dán sticker vào đúng vị trí) ─────────────
+let stkStickers = []; // {num, image, x, y, sizePct}
 
-function selStkDiff(d,el){
-  stkDiff=d;
-  el.closest('.diff-grid').querySelectorAll('.diff-card').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  previewSticker();
-}
-
-function previewSticker(){
-  const url = gdriveDirect(document.getElementById('stkImg').value.trim());
-  const grid = document.getElementById('stkPreviewGrid');
-  const n = STK_GRID[stkDiff];
+function renderStkPreview(){
+  const url = gdriveDirect(document.getElementById('stkBgUrl').value.trim());
+  const wrap = document.getElementById('stkPreviewWrap');
   if(!url){
-    grid.style.gridTemplateColumns='';
-    grid.innerHTML='<p style="color:var(--t3);font-size:13px;padding:20px;text-align:center;grid-column:1/-1">Dán link ảnh để xem trước</p>';
+    wrap.innerHTML = '<span style="color:var(--t3);font-size:13px;padding:24px">Dán link ảnh nền để bắt đầu đánh dấu</span>';
     return;
   }
-  grid.style.gridTemplateColumns = `repeat(${n},1fr)`;
-  let cells='';
-  for(let r=0;r<n;r++){
-    for(let c=0;c<n;c++){
-      cells += `<div style="aspect-ratio:1/1;background-image:url('${url}');background-size:${n*100}% ${n*100}%;background-position:${n>1?(c/(n-1))*100:0}% ${n>1?(r/(n-1))*100:0}%"></div>`;
-    }
+  wrap.innerHTML = `<img id="stkBgImg" src="${url}" style="display:block;width:100%;height:auto;pointer-events:none;user-select:none" draggable="false">
+    <div id="stkMarkers" style="position:absolute;inset:0"></div>`;
+  wrap.onclick = onStkPreviewClick;
+  const img = document.getElementById('stkBgImg');
+  img.onerror = ()=>{ wrap.innerHTML = '<span style="color:var(--red);font-size:13px;padding:24px">❌ Không tải được ảnh nền. Kiểm tra link/quyền chia sẻ.</span>'; };
+  img.onload = renderStkMarkers;
+}
+
+function onStkPreviewClick(e){
+  const img = document.getElementById('stkBgImg');
+  if(!img) return;
+  const url = document.getElementById('stkPieceUrl').value.trim();
+  if(!url){ showToast('Dán link sticker trước khi đánh dấu vị trí!','bad'); return; }
+  const rect = img.getBoundingClientRect();
+  const x = (e.clientX-rect.left)/rect.width;
+  const y = (e.clientY-rect.top)/rect.height;
+  if(x<0||x>1||y<0||y>1) return;
+
+  const num = +document.getElementById('stkPieceNum').value || (stkStickers.length+1);
+  const sizePct = +document.getElementById('stkPieceSize').value || 10;
+
+  stkStickers.push({ num, image: gdriveDirect(url), x, y, sizePct });
+  document.getElementById('stkPieceUrl').value='';
+  document.getElementById('stkPieceNum').value = num+1;
+  document.getElementById('stkPieceUrl').focus();
+  renderStkMarkers();
+  renderStkList();
+}
+
+function renderStkMarkers(){
+  const holder = document.getElementById('stkMarkers');
+  if(!holder) return;
+  holder.innerHTML = stkStickers.map((s,i)=>`
+    <div style="position:absolute;left:${s.x*100}%;top:${s.y*100}%;transform:translate(-50%,-50%);
+      width:24px;height:24px;border-radius:50%;background:rgba(255,109,74,.85);color:#fff;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
+      font-family:var(--mono);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)">${s.num}</div>
+  `).join('');
+}
+
+function renderStkList(){
+  document.getElementById('stkCount').textContent = stkStickers.length;
+  const list = document.getElementById('stkList');
+  if(!stkStickers.length){
+    list.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:8px">Chưa có sticker nào được đánh dấu.</div>';
+    return;
   }
-  grid.innerHTML = cells;
+  list.innerHTML = stkStickers.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 8px">
+      <img src="${s.image}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:#fff">
+      <div style="flex:1;font-size:12px">
+        <div style="font-weight:700">#${s.num}</div>
+        <div style="color:var(--t3)">${(s.x*100).toFixed(1)}%, ${(s.y*100).toFixed(1)}% · ${s.sizePct}%</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="removeSticker(${i})" title="Xoá">🗑</button>
+    </div>
+  `).join('');
+}
+
+function removeSticker(i){
+  stkStickers.splice(i,1);
+  renderStkMarkers();
+  renderStkList();
 }
 
 async function publishSticker(){
   const title = document.getElementById('stkTitle').value.trim();
-  const desc  = document.getElementById('stkDesc').value.trim();
   const deadlineVal = document.getElementById('stkDeadline').value;
-  const img = gdriveDirect(document.getElementById('stkImg').value.trim());
+  const bg = gdriveDirect(document.getElementById('stkBgUrl').value.trim());
   if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
   if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
-  if(!img){ showToast('Vui lòng dán link ảnh!','bad'); return; }
+  if(!bg){ showToast('Vui lòng dán link ảnh nền!','bad'); return; }
+  if(stkStickers.length < 2){ showToast('Cần đánh dấu ít nhất 2 sticker!','bad'); return; }
 
   const ch = {
     id: nextId++,
     type: 'sticker-puzzle',
-    title, description: desc,
-    difficulty: stkDiff,
-    gridSize: STK_GRID[stkDiff],
-    image: img,
+    title, description: document.getElementById('stkDesc').value.trim(),
+    background: bg,
+    stickers: stkStickers,
     deadline: new Date(deadlineVal).toISOString(),
     status: 'active',
     createdAt: new Date().toISOString()
@@ -597,12 +659,16 @@ async function publishSticker(){
   const link = location.href.replace('admin.html','game/sticker-puzzle.html');
   document.getElementById('stkShareCard').style.display='block';
   document.getElementById('stkShareUrl').textContent = link;
-  showToast(`🚀 Sticker Puzzle #${ch.id} đã publish!`,'ok');
+  showToast(`🚀 Sticker Puzzle #${ch.id} đã publish với ${stkStickers.length} sticker!`,'ok');
 
   document.getElementById('stkTitle').value='';
   document.getElementById('stkDesc').value='';
-  document.getElementById('stkImg').value='';
-  previewSticker();
+  document.getElementById('stkBgUrl').value='';
+  document.getElementById('stkPieceUrl').value='';
+  document.getElementById('stkPieceNum').value=1;
+  stkStickers = [];
+  renderStkPreview();
+  renderStkList();
 }
 
 function copyStkLink(){
@@ -678,7 +744,20 @@ function isSafe(b,r,c,n){if(b[r].includes(n))return false;if(b.some(row=>row[c]=
 // ══════════════════════════════════════════════════════════════
 //  SPOT DIFFERENCE
 // ══════════════════════════════════════════════════════════════
-const MAX_SPOTS = 10;
+function getMaxSpots(){
+  return parseInt(document.getElementById('spTargetCount').value) || 10;
+}
+function onSpTargetChange(){
+  const max = getMaxSpots();
+  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + max;
+  // Nếu đã đánh dấu nhiều hơn số mới, cắt bớt cho khớp
+  if(spSpots.length > max){
+    spSpots = spSpots.slice(0, max);
+    updateSpotList();
+    redrawCanvases();
+    document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + max;
+  }
+}
 let spSpots = [];
 let spImg1Data = null;
 let spImg2Data = null;
@@ -719,7 +798,7 @@ function previewSpotImg(side){
 }
 
 function handleSpotClick(e){
-  if(spSpots.length >= MAX_SPOTS){ showToast(`Đã đủ ${MAX_SPOTS} điểm!`,''); return; }
+  if(spSpots.length >= getMaxSpots()){ showToast(`Đã đủ ${getMaxSpots()} điểm!`,''); return; }
   if(!spImg2Data){ showToast('Vui lòng tải ảnh trước!','bad'); return; }
   const wrap = document.getElementById('sp-right-wrap');
   const img = document.getElementById('sp-preview-right');
@@ -730,7 +809,7 @@ function handleSpotClick(e){
   spSpots.push({ rightX:pctX, rightY:pctY, leftX:pctX, leftY:pctY });
   updateSpotList();
   redrawCanvases();
-  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + MAX_SPOTS;
+  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + getMaxSpots();
 }
 
 function redrawCanvases(){
@@ -785,14 +864,14 @@ function removeSpot(i){
   spSpots.splice(i,1);
   updateSpotList();
   redrawCanvases();
-  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + MAX_SPOTS;
+  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + getMaxSpots();
 }
 
 function clearSpots(){
   spSpots=[];
   updateSpotList();
   redrawCanvases();
-  document.getElementById('spSpotCount').textContent = '0 / ' + MAX_SPOTS;
+  document.getElementById('spSpotCount').textContent = '0 / ' + getMaxSpots();
 }
 
 async function publishSpot(){
@@ -803,7 +882,7 @@ async function publishSpot(){
   if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
   if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
   if(!spImg1Data||!spImg2Data){ showToast('Vui lòng xem trước đủ 2 ảnh!','bad'); return; }
-  if(spSpots.length < MAX_SPOTS){ showToast(`Cần đánh dấu đủ ${MAX_SPOTS} điểm! (hiện có ${spSpots.length})`,'bad'); return; }
+  if(spSpots.length < getMaxSpots()){ showToast(`Cần đánh dấu đủ ${getMaxSpots()} điểm! (hiện có ${spSpots.length})`,'bad'); return; }
 
   const ch = {
     id: nextId++,

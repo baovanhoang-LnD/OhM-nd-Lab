@@ -71,7 +71,7 @@
 <div class="game-grid">
 
   <!-- Sudoku -->
-  <a href="game/sudoku.html" class="game-card">
+  <a href="game/sudoku.html" class="game-card" data-game-type="sudoku">
     <div class="game-card-icon">🔢</div>
     <div class="game-card-title">Sudoku</div>
     <div class="game-card-desc">Điền số vào lưới 9×9 sao cho mỗi hàng, cột và ô 3×3 đều chứa đủ các số từ 1 đến 9.</div>
@@ -79,7 +79,7 @@
   </a>
 
   <!-- Memory Match -->
-  <a href="game/memory-match.html" class="game-card">
+  <a href="game/memory-match.html" class="game-card" data-game-type="memory-match">
     <div class="game-card-icon">🃏</div>
     <div class="game-card-title">Lật Thẻ</div>
     <div class="game-card-desc">Lật 2 thẻ mỗi lượt, tìm tất cả các cặp giống nhau nhanh nhất có thể!</div>
@@ -87,21 +87,28 @@
   </a>
 
   <!-- Spot Difference -->
-  <a href="game/spot-difference.html" class="game-card">
+  <a href="game/spot-difference.html" class="game-card" data-game-type="spot-difference">
     <div class="game-card-icon">🔍</div>
     <div class="game-card-title">Tìm Điểm Khác Biệt</div>
     <div class="game-card-desc">So sánh 2 hình ảnh và tìm ra 10 điểm khác nhau trong thời gian giới hạn.</div>
     <div class="game-card-tag">✅ Đang hoạt động</div>
   </a>
 
-  <!-- Sticker Puzzle 
-  <a href="game/sticker-puzzle.html" class="game-card">
+  <!-- Sticker Puzzle -->
+  <a href="game/sticker-puzzle.html" class="game-card" data-game-type="sticker-puzzle">
     <div class="game-card-icon">🧩</div>
     <div class="game-card-title">Sticker Puzzle</div>
     <div class="game-card-desc">Kéo thả các mảnh ghép về đúng vị trí để hoàn thành bức tranh, càng nhanh càng ít lượt càng tốt.</div>
     <div class="game-card-tag">✅ Đang hoạt động</div>
   </a>
-  -->
+
+  <!-- Dọn Dẹp Không Gian -->
+  <a href="game/clean-space.html" class="game-card" data-game-type="clean-space">
+    <div class="game-card-icon">🧹</div>
+    <div class="game-card-title">Dọn Dẹp Không Gian</div>
+    <div class="game-card-desc">Lau vết bẩn và đặt đồ vật đúng nơi quy định — vừa dọn dẹp vừa ôn lại nội quy văn phòng!</div>
+    <div class="game-card-tag">✅ Đang hoạt động</div>
+  </a>
 
   <!-- Placeholder: thêm trò mới ở đây -->
   <div class="game-card coming-soon">
@@ -114,11 +121,31 @@
 </div>
 </div>
 <script>
+  // ── CẤU HÌNH ────────────────────────────────────────────────
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2iK5X78FucVv36FcgyKPJiEopb9gdQMpD6V11QWAnMYpNo09yetHe11V3TtNjvbwG/exec';
+  const _key = 'BTK2026';
+
   window.onload = () => {
     const name = localStorage.getItem('bb_name');
     const dept = localStorage.getItem('bb_dept');
     if(name) showProfile(name, dept);
+    applyGameVisibility();
   };
+
+  // ── ẨN/HIỆN THẺ GAME THEO CÔNG TẮC ADMIN ──────────────────────
+  async function applyGameVisibility(){
+    try{
+      const res = await fetch(`${SCRIPT_URL}?action=getGameSettings&key=${_key}&_=${Date.now()}`);
+      const data = await res.json();
+      const settings = data.settings || {};
+      document.querySelectorAll('.game-card[data-game-type]').forEach(card => {
+        const type = card.dataset.gameType;
+        if(settings[type] === false){ card.style.display = 'none'; }
+      });
+    }catch(e){
+      console.error('Không tải được cấu hình hiển thị game, giữ nguyên mặc định:', e);
+    }
+  }
   
   function savePlayer(){
     const name = document.getElementById('inputName').value.trim();

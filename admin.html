@@ -117,6 +117,26 @@ textarea{resize:vertical;min-height:70px;}
 hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
 .tip{background:var(--ol);border:1px solid var(--om);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--t2);line-height:1.5;margin-top:10px;}
 .tip-blue{background:var(--bl);border:1px solid #bfdbfe;}
+
+/* ── GAME VISIBILITY TOGGLE ─────────────────────────────────── */
+.vis-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 18px;}
+.vis-info{display:flex;align-items:center;gap:12px;}
+.vis-icon{font-size:22px;}
+.vis-name{font-size:14px;font-weight:700;}
+.vis-sub{font-size:11px;color:var(--t3);margin-top:1px;}
+.switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer;}
+.switch input{opacity:0;width:0;height:0;}
+.switch-track{position:absolute;inset:0;background:var(--border2);border-radius:999px;transition:.2s;}
+.switch-track::before{content:'';position:absolute;height:18px;width:18px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.switch input:checked + .switch-track{background:var(--green);}
+.switch input:checked + .switch-track::before{transform:translateX(20px);}
+
+/* ── CLEAN SPACE ADMIN ──────────────────────────────────────── */
+.cs-marker{position:absolute;transform:translate(-50%,-50%);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.cs-marker.wipe{background:rgba(122,82,54,.9);}
+.cs-marker.from{background:rgba(224,62,62,.88);}
+.cs-marker.to{background:rgba(45,164,78,.88);}
+.cs-marker-line{position:absolute;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -145,7 +165,9 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       <div class="nav-item" onclick="switchPage('spot',this)"><span>🔍</span> Spot Difference</div>
       <div class="nav-item" onclick="switchPage('memory',this)"><span>🃏</span> Lật Thẻ</div>
       <div class="nav-item" onclick="switchPage('sticker',this)"><span>🧩</span> Sticker Puzzle</div>
+      <div class="nav-item" onclick="switchPage('clean',this)"><span>🧹</span> Dọn Dẹp Không Gian</div>
       <div class="sb-section" style="margin-top:8px">Quản lý</div>
+      <div class="nav-item" onclick="switchPage('visibility',this)"><span>👁️</span> Hiển Thị Game</div>
       <div class="nav-item" onclick="switchPage('manage',this)"><span>📋</span> Quản lý</div>
       <div class="nav-item" onclick="switchPage('results',this)"><span>📊</span> Kết quả</div>
     </div>
@@ -248,10 +270,6 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
                 <span style="font-size:13px;color:var(--t3);font-weight:700;min-width:45px" id="spTimeDisplay">= 3:00</span>
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Số điểm khác biệt</label>
-              <input type="number" id="spTargetCount" value="10" min="3" max="40" oninput="onSpTargetChange()">
-            </div>
             <hr class="dv">
             <div class="card-label">Link ảnh</div>
             <div class="form-group">
@@ -264,7 +282,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <input type="text" id="spImg2" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
               <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(2)" style="margin-top:6px">👁 Xem trước ảnh phải</button>
             </div>
-            <div class="tip">💡 Sau khi xem trước, click vào <strong>ảnh phải</strong> để đánh dấu đủ số điểm khác biệt đã chọn.</div>
+            <div class="tip">💡 Sau khi xem trước, click vào <strong>ảnh phải</strong> để đánh dấu 10 điểm khác biệt.</div>
             <div class="tip tip-blue" style="margin-top:6px">📌 <strong>Google Drive:</strong> Share → Anyone with link → Copy link → dán vào đây. Hệ thống tự chuyển sang link trực tiếp.</div>
             <hr class="dv">
             <button class="btn btn-primary" onclick="publishSpot()" style="width:100%;justify-content:center">🚀 Publish</button>
@@ -279,7 +297,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
                 <button class="btn btn-secondary btn-sm" onclick="clearSpots()">Xóa hết</button>
               </div>
             </div>
-            <div class="tip" style="margin-bottom:12px">👆 Click vào <strong>ảnh phải</strong> để đánh dấu từng điểm. Cần đủ số điểm đã chọn ở bên trái mới publish được.</div>
+            <div class="tip" style="margin-bottom:12px">👆 Click vào <strong>ảnh phải</strong> để đánh dấu từng điểm. Cần đủ 10 điểm mới publish được.</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
               <div>
                 <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:4px">Ảnh gốc</div>
@@ -436,6 +454,108 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       </div>
     </div>
 
+    <!-- ══ CLEAN SPACE ═════════════════════════════════════════ -->
+    <div id="page-clean" class="page">
+      <div class="page-hdr">
+        <h2>🧹 Tạo Game Dọn Dẹp Không Gian</h2>
+        <p>Dán ảnh không gian bừa bộn, đánh dấu từng nhiệm vụ (lau vết bẩn / đặt đồ đúng chỗ) ngay trên ảnh</p>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-label">Thông tin ván</div>
+            <div class="form-group">
+              <label class="form-label">Tiêu đề</label>
+              <input type="text" id="csTitle" placeholder="VD: Dọn Sạch Bếp Chung — Tuần 1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mô tả (tùy chọn)</label>
+              <input type="text" id="csDesc" placeholder="Gợi ý hoặc chú thích...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hết hạn lúc</label>
+              <input type="datetime-local" id="csDeadline">
+            </div>
+            <hr class="dv">
+            <div class="card-label">Bước 1 — Ảnh không gian</div>
+            <div class="tip tip-blue" style="margin-bottom:10px">📌 Dùng ảnh chụp/vẽ không gian đang bừa bộn (bếp chung, phòng họp...). Google Drive: Share → Anyone with link → dán vào đây.</div>
+            <div class="form-group">
+              <input type="text" id="csBgUrl" placeholder="Dán link ảnh nền..." oninput="renderCsPreview()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ảnh khăn lau — tùy chọn (để trống dùng hình khăn mặc định)</label>
+              <input type="text" id="csRagUrl" placeholder="Dán link ảnh khăn lau (Google Drive/Imgur...)...">
+            </div>
+            <hr class="dv">
+            <div class="card-label">Bước 2 — Thêm nhiệm vụ</div>
+            <div class="tip" style="margin-bottom:10px" id="csModeHint">💡 Chọn loại nhiệm vụ, nhập nội quy, rồi bấm lên ảnh bên phải để đánh dấu vị trí.</div>
+            <div class="form-group">
+              <label class="form-label">Loại nhiệm vụ</label>
+              <div class="diff-grid" style="grid-template-columns:repeat(2,1fr)">
+                <div class="diff-card active" id="csModeWipeCard" onclick="setCsMode('wipe')"><div class="di">🧽</div><div class="dl">Lau vết bẩn</div><div class="ds">1 lần bấm = 1 vết bẩn</div></div>
+                <div class="diff-card" id="csModePlaceCard" onclick="setCsMode('place')"><div class="di">📦</div><div class="dl">Đặt đồ đúng chỗ</div><div class="ds">Bấm 2 lần: sai → đúng</div></div>
+              </div>
+            </div>
+            <div class="form-group" id="csIconGroup">
+              <label class="form-label" id="csIconLabel">Icon vật thể (emoji) hoặc link ảnh — tùy chọn</label>
+              <input type="text" id="csItemIcon" placeholder="VD: 🗑️ hoặc link ảnh vật thể...">
+              <div class="tip tip-blue" style="margin-top:8px">📌 <strong>Google Drive:</strong> dán nguyên link share (Anyone with link) — hệ thống tự chuyển sang link ảnh trực tiếp, không cần chỉnh gì thêm.</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <div class="form-group" style="flex:1">
+                <label class="form-label">Kích thước (% chiều rộng ảnh)</label>
+                <input type="number" id="csSizePct" value="9" min="3" max="30">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nội quy hiện ra khi hoàn thành nhiệm vụ này</label>
+              <textarea id="csNoiquy" placeholder="VD: Luôn lau bàn sau khi ăn uống ở khu vực bếp chung nhé!"></textarea>
+            </div>
+            <hr class="dv">
+            <div class="card-label">Danh sách nhiệm vụ đã đánh dấu (<span id="csCount">0</span>)</div>
+            <div id="csList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;margin-bottom:12px"></div>
+            <hr class="dv">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" id="csPublishBtn" onclick="publishCleanSpace()" style="flex:1;justify-content:center">🚀 Publish</button>
+              <button class="btn btn-secondary" id="csCancelEditBtn" onclick="cancelCsEdit()" style="display:none;justify-content:center">✕ Hủy sửa</button>
+            </div>
+          </div>
+        </div>
+        <div class="col" style="min-width:280px">
+          <div class="card">
+            <div class="card-label">Ảnh không gian — bấm để đánh dấu</div>
+            <div class="tip" style="margin-bottom:12px" id="csClickHint">👁 Chọn "Lau vết bẩn" rồi bấm 1 lần lên ảnh cho mỗi vết bẩn. Chọn "Đặt đồ đúng chỗ" rồi bấm 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.</div>
+            <div id="csPreviewWrap" style="position:relative;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg2);min-height:160px;display:flex;align-items:center;justify-content:center;cursor:crosshair">
+              <span style="color:var(--t3);font-size:13px;padding:24px">Dán link ảnh nền để bắt đầu đánh dấu</span>
+            </div>
+          </div>
+          <div class="card" id="csShareCard" style="display:none">
+            <div class="card-label">🔗 Link chia sẻ</div>
+            <div class="share-box">
+              <div class="share-url" id="csShareUrl">—</div>
+              <button class="btn btn-secondary btn-sm" onclick="copyCsLink()">📋 Copy link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ GAME VISIBILITY ═════════════════════════════════════ -->
+    <div id="page-visibility" class="page">
+      <div class="page-hdr">
+        <h2>👁️ Hiển Thị Game</h2>
+        <p>Bật/tắt game nào sẽ hiện trên trang chủ (index.html) — không ảnh hưởng các ván đang active</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="card-label" style="margin:0">Danh sách game</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadGameVisibility()">🔄 Refresh</button>
+        </div>
+        <div id="visList" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div class="tip" style="margin-top:14px">💡 Khi tắt 1 game, thẻ game đó sẽ tự ẩn khỏi trang chủ ngay (người chơi vào lại trang sẽ không thấy nữa), nhưng dữ liệu và các ván đã tạo vẫn được giữ nguyên.</div>
+      </div>
+    </div>
+
     <!-- ══ MANAGE ══════════════════════════════════════════════ -->
     <div id="page-manage" class="page">
       <div class="page-hdr">
@@ -530,6 +650,7 @@ function switchPage(name,el){
   el.classList.add('active');
   if(name==='manage') loadManage();
   if(name==='results') loadResults();
+  if(name==='visibility') loadGameVisibility();
 }
 
 // ── INIT ─────────────────────────────────────────────────────
@@ -541,6 +662,7 @@ window.onload=()=>{
   document.getElementById('spDeadline').value=dtVal;
   document.getElementById('mmDeadline').value=dtVal;
   document.getElementById('stkDeadline').value=dtVal;
+  document.getElementById('csDeadline').value=dtVal;
   randomSeed();
   updateSpotList();
   initMMCards();
@@ -676,6 +798,323 @@ function copyStkLink(){
     .then(()=>showToast('📋 Đã copy link!','ok'));
 }
 
+// ══════════════════════════════════════════════════════════════
+//  CLEAN SPACE (Dọn Dẹp Không Gian)
+//  tasks: [{kind:'wipe', x,y, sizePct, noiquy, icon}]
+//         [{kind:'place', fromX,fromY, toX,toY, sizePct, noiquy, icon}]
+// ══════════════════════════════════════════════════════════════
+let csMode = 'wipe';         // 'wipe' hoặc 'place'
+let csTasks = [];            // danh sách nhiệm vụ đã đánh dấu
+let csPendingFrom = null;    // lưu tạm điểm "sai" khi đang đánh dấu 'place' (chờ điểm "đúng")
+let csEditingId = null;      // MỚI: nếu khác null → đang sửa ván có ID này thay vì tạo mới
+
+function setCsMode(mode){
+  csMode = mode;
+  csPendingFrom = null;
+  document.getElementById('csModeWipeCard').classList.toggle('active', mode==='wipe');
+  document.getElementById('csModePlaceCard').classList.toggle('active', mode==='place');
+  document.getElementById('csModeHint').textContent = mode==='wipe'
+    ? '💡 Nhập nội quy (và ảnh vết bẩn nếu muốn), rồi bấm lên ảnh bên phải — mỗi lần bấm = 1 vết bẩn mới.'
+    : '💡 Nhập nội quy + icon vật thể, rồi bấm lên ảnh 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.';
+  document.getElementById('csClickHint').textContent = mode==='wipe'
+    ? '👁 Mỗi lần bấm lên ảnh sẽ thêm 1 vết bẩn tại đúng điểm bấm.'
+    : '👁 Bấm lần 1 = vị trí đồ đang để sai (màu đỏ). Bấm lần 2 = vị trí đúng quy định (màu xanh).';
+  document.getElementById('csIconLabel').textContent = mode==='wipe'
+    ? 'Ảnh vết bẩn — tùy chọn (để trống sẽ dùng hình vết bẩn mặc định)'
+    : 'Icon vật thể (emoji) hoặc link ảnh — tùy chọn';
+  document.getElementById('csItemIcon').placeholder = mode==='wipe'
+    ? 'Dán link ảnh vết bẩn (cà phê, dầu mỡ...) — để trống nếu dùng mặc định'
+    : 'VD: 🗑️ hoặc link ảnh vật thể...';
+  renderCsMarkers();
+}
+
+function renderCsPreview(){
+  const url = gdriveDirect(document.getElementById('csBgUrl').value.trim());
+  const wrap = document.getElementById('csPreviewWrap');
+  if(!url){
+    wrap.innerHTML = '<span style="color:var(--t3);font-size:13px;padding:24px">Dán link ảnh nền để bắt đầu đánh dấu</span>';
+    return;
+  }
+  wrap.innerHTML = `<img id="csBgImg" src="${url}" style="display:block;width:100%;height:auto;pointer-events:none;user-select:none" draggable="false">
+    <div id="csMarkers" style="position:absolute;inset:0"></div>`;
+  wrap.onclick = onCsPreviewClick;
+  const img = document.getElementById('csBgImg');
+  img.onerror = ()=>{ wrap.innerHTML = '<span style="color:var(--red);font-size:13px;padding:24px">❌ Không tải được ảnh nền. Kiểm tra link/quyền chia sẻ.</span>'; };
+  img.onload = renderCsMarkers;
+}
+
+function onCsPreviewClick(e){
+  const img = document.getElementById('csBgImg');
+  if(!img) return;
+  const noiquy = document.getElementById('csNoiquy').value.trim();
+  if(!noiquy){ showToast('Nhập nội quy trước khi đánh dấu vị trí!','bad'); return; }
+  const rect = img.getBoundingClientRect();
+  const x = (e.clientX-rect.left)/rect.width;
+  const y = (e.clientY-rect.top)/rect.height;
+  if(x<0||x>1||y<0||y>1) return;
+  const sizePct = +document.getElementById('csSizePct').value || 9;
+  const icon = document.getElementById('csItemIcon').value.trim();
+
+  if(csMode === 'wipe'){
+    const wipeIsImg = /^https?:\/\//.test(icon);
+    const wipeImage = wipeIsImg ? gdriveDirect(icon) : '';
+    csTasks.push({ kind:'wipe', x, y, sizePct, noiquy, image: wipeImage });
+    document.getElementById('csNoiquy').value='';
+    document.getElementById('csItemIcon').value='';
+    renderCsMarkers();
+    renderCsList();
+    showToast('🧽 Đã thêm vết bẩn!','ok');
+  } else {
+    if(!csPendingFrom){
+      csPendingFrom = { x, y };
+      renderCsMarkers();
+      showToast('📍 Đã đánh dấu vị trí SAI — bấm tiếp vị trí ĐÚNG!','');
+    } else {
+      const isImg = /^https?:\/\//.test(icon);
+      const iconDirect = isImg ? gdriveDirect(icon) : icon;
+      csTasks.push({
+        kind:'place',
+        fromX: csPendingFrom.x, fromY: csPendingFrom.y,
+        toX: x, toY: y,
+        sizePct, noiquy,
+        icon: isImg ? '' : (iconDirect || '📦'),
+        image: isImg ? iconDirect : ''
+      });
+      csPendingFrom = null;
+      document.getElementById('csNoiquy').value='';
+      document.getElementById('csItemIcon').value='';
+      renderCsMarkers();
+      renderCsList();
+      showToast('📦 Đã thêm nhiệm vụ đặt đồ!','ok');
+    }
+  }
+}
+
+function renderCsMarkers(){
+  const holder = document.getElementById('csMarkers');
+  if(!holder) return;
+  let html = '';
+  csTasks.forEach((t,i)=>{
+    if(t.kind==='wipe'){
+      html += `<div class="cs-marker wipe" style="left:${t.x*100}%;top:${t.y*100}%">${i+1}</div>`;
+    } else {
+      html += `<div class="cs-marker from" style="left:${t.fromX*100}%;top:${t.fromY*100}%">${i+1}</div>`;
+      html += `<div class="cs-marker to" style="left:${t.toX*100}%;top:${t.toY*100}%">${i+1}</div>`;
+    }
+  });
+  if(csPendingFrom){
+    html += `<div class="cs-marker from" style="left:${csPendingFrom.x*100}%;top:${csPendingFrom.y*100}%">•</div>`;
+  }
+  holder.innerHTML = html;
+}
+
+function renderCsList(){
+  document.getElementById('csCount').textContent = csTasks.length;
+  const list = document.getElementById('csList');
+  if(!csTasks.length){
+    list.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:8px">Chưa có nhiệm vụ nào được đánh dấu.</div>';
+    return;
+  }
+  list.innerHTML = csTasks.map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+      <span style="font-size:16px">${t.image?`<img src="${escH(t.image)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;border-radius:4px">`:(t.kind==='wipe'?'🧽':(t.icon||'📦'))}</span>
+      <div style="flex:1;font-size:12px">
+        <div style="font-weight:700">#${i+1} · ${t.kind==='wipe'?'Lau vết bẩn':'Đặt đồ đúng chỗ'}</div>
+        <div style="color:var(--t3)">${escH(t.noiquy).slice(0,60)}${t.noiquy.length>60?'…':''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
+        <input type="number" value="${t.sizePct||9}" min="3" max="40" title="Kích thước (%)"
+          style="width:48px;font-size:11px;padding:5px 6px;text-align:center"
+          onchange="updateCsTaskSize(${i}, this.value)">
+        <span style="font-size:10px;color:var(--t3)">%</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="removeCsTask(${i})" title="Xoá">🗑</button>
+    </div>`).join('');
+}
+
+function updateCsTaskSize(i, val){
+  const v = Math.max(3, Math.min(40, +val || 9));
+  csTasks[i].sizePct = v;
+  showToast(`📐 Nhiệm vụ #${i+1}: kích thước ${v}%`,'');
+}
+
+function removeCsTask(i){
+  csTasks.splice(i,1);
+  renderCsMarkers();
+  renderCsList();
+}
+
+async function publishCleanSpace(){
+  const title = document.getElementById('csTitle').value.trim();
+  const deadlineVal = document.getElementById('csDeadline').value;
+  const bg = gdriveDirect(document.getElementById('csBgUrl').value.trim());
+  if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
+  if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
+  if(!bg){ showToast('Vui lòng dán link ảnh nền!','bad'); return; }
+  if(csTasks.length < 1){ showToast('Cần đánh dấu ít nhất 1 nhiệm vụ!','bad'); return; }
+
+  const isEditing = csEditingId !== null;
+  const ragImage = gdriveDirect(document.getElementById('csRagUrl').value.trim());
+  const ch = {
+    id: isEditing ? csEditingId : nextId++,
+    type: 'clean-space',
+    title, description: document.getElementById('csDesc').value.trim(),
+    background: bg,
+    ragImage: ragImage || '',
+    tasks: csTasks,
+    deadline: new Date(deadlineVal).toISOString(),
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+
+  if(isEditing){
+    const idx = challenges.findIndex(c=>String(c.id)===String(csEditingId));
+    if(idx>-1) challenges[idx] = {...challenges[idx], ...ch};
+  } else {
+    challenges.push(ch);
+  }
+  localStorage.setItem('bb_challenges', JSON.stringify(challenges));
+
+  try{
+    const action = isEditing ? 'updateChallenge' : 'setChallenge';
+    const res = await fetch(`${SCRIPT_URL}?action=${action}&key=${_key}&data=${encodeURIComponent(JSON.stringify(ch))}`);
+    const data = await res.json();
+    if(data.status !== 'ok'){
+      showToast(`⚠️ Server báo lỗi: ${data.message||'không rõ'} — có thể Apps Script chưa deploy bản mới!`,'bad');
+      return;
+    }
+  }catch(e){ console.error(e); showToast('❌ Lỗi kết nối tới Apps Script','bad'); return; }
+
+  const link = location.href.replace('admin.html','game/clean-space.html');
+  document.getElementById('csShareCard').style.display='block';
+  document.getElementById('csShareUrl').textContent = link;
+  showToast(isEditing
+    ? `✅ Đã cập nhật ván #${ch.id} — ${csTasks.length} nhiệm vụ!`
+    : `🚀 Dọn Dẹp Không Gian #${ch.id} đã publish với ${csTasks.length} nhiệm vụ!`, 'ok');
+
+  resetCsForm();
+  if(isEditing) loadManage();
+}
+
+function resetCsForm(){
+  document.getElementById('csTitle').value='';
+  document.getElementById('csDesc').value='';
+  document.getElementById('csBgUrl').value='';
+  document.getElementById('csRagUrl').value='';
+  document.getElementById('csNoiquy').value='';
+  document.getElementById('csItemIcon').value='';
+  csTasks = [];
+  csPendingFrom = null;
+  csEditingId = null;
+  document.getElementById('csPublishBtn').textContent = '🚀 Publish';
+  document.getElementById('csCancelEditBtn').style.display = 'none';
+  document.querySelector('#page-clean .page-hdr h2').textContent = '🧹 Tạo Game Dọn Dẹp Không Gian';
+  renderCsPreview();
+  renderCsList();
+}
+
+// ── SỬA VÁN ĐÃ PUBLISH ─────────────────────────────────────────
+function editCleanSpace(id){
+  const ch = challenges.find(c=>String(c.id)===String(id) && c.type==='clean-space');
+  if(!ch){ showToast('Không tìm thấy ván này!','bad'); return; }
+
+  csEditingId = ch.id;
+  document.getElementById('csTitle').value = ch.title || '';
+  document.getElementById('csDesc').value = ch.description || '';
+  document.getElementById('csBgUrl').value = ch.background || '';
+  document.getElementById('csRagUrl').value = ch.ragImage || '';
+
+  const d = new Date(ch.deadline);
+  const pad = n=>String(n).padStart(2,'0');
+  document.getElementById('csDeadline').value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  csTasks = JSON.parse(JSON.stringify(ch.tasks || []));
+  csPendingFrom = null;
+
+  document.getElementById('csPublishBtn').textContent = '✅ Cập nhật ván #' + ch.id;
+  document.getElementById('csCancelEditBtn').style.display = 'inline-flex';
+  document.querySelector('#page-clean .page-hdr h2').textContent = `✏️ Đang sửa ván #${ch.id}`;
+
+  switchPage('clean', [...document.querySelectorAll('.nav-item')].find(n=>n.getAttribute('onclick')?.includes("switchPage('clean'")));
+  renderCsPreview();
+  renderCsList();
+  showToast(`✏️ Đang sửa "${ch.title}" — chỉnh xong bấm "Cập nhật"`,'');
+}
+
+function cancelCsEdit(){
+  resetCsForm();
+  showToast('Đã hủy chỉnh sửa','');
+}
+
+function copyCsLink(){
+  navigator.clipboard.writeText(document.getElementById('csShareUrl').textContent)
+    .then(()=>showToast('📋 Đã copy link!','ok'));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GAME VISIBILITY (bật/tắt game trên trang chủ)
+// ══════════════════════════════════════════════════════════════
+const GAME_TYPES = [
+  { type:'sudoku',          icon:'🔢', name:'Sudoku' },
+  { type:'spot-difference', icon:'🔍', name:'Spot Difference' },
+  { type:'memory-match',    icon:'🃏', name:'Lật Thẻ' },
+  { type:'sticker-puzzle',  icon:'🧩', name:'Sticker Puzzle' },
+  { type:'clean-space',     icon:'🧹', name:'Dọn Dẹp Không Gian' },
+];
+let gameSettings = {}; // {type: true/false}
+
+async function loadGameVisibility(){
+  const list = document.getElementById('visList');
+  list.innerHTML = '<p style="color:var(--t3);font-size:13px">Đang tải...</p>';
+  try{
+    const res = await fetch(`${SCRIPT_URL}?action=getGameSettings&key=${_key}&_=${Date.now()}`);
+    const data = await res.json();
+    gameSettings = data.settings || {};
+  }catch(e){
+    console.error(e);
+    gameSettings = JSON.parse(localStorage.getItem('bb_game_settings')||'{}');
+  }
+  renderGameVisibility();
+}
+
+function renderGameVisibility(){
+  const list = document.getElementById('visList');
+  list.innerHTML = GAME_TYPES.map(g=>{
+    const enabled = gameSettings[g.type] !== false; // mặc định bật nếu chưa có setting
+    return `<div class="vis-row">
+      <div class="vis-info">
+        <span class="vis-icon">${g.icon}</span>
+        <div>
+          <div class="vis-name">${g.name}</div>
+          <div class="vis-sub">${enabled?'Đang hiển thị trên trang chủ':'Đã ẩn khỏi trang chủ'}</div>
+        </div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" ${enabled?'checked':''} onchange="toggleGameVisibility('${g.type}',this.checked)">
+        <span class="switch-track"></span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+async function toggleGameVisibility(type, enabled){
+  gameSettings[type] = enabled;
+  localStorage.setItem('bb_game_settings', JSON.stringify(gameSettings));
+  renderGameVisibility();
+  try{
+    const res = await fetch(`${SCRIPT_URL}?action=setGameSetting&key=${_key}&gameType=${encodeURIComponent(type)}&enabled=${enabled}`);
+    const data = await res.json();
+    if(data.status !== 'ok'){
+      showToast(`⚠️ Server chưa nhận lệnh này (${data.message||'lỗi không rõ'}) — có thể Apps Script chưa deploy bản mới!`,'bad');
+      return;
+    }
+    showToast(enabled ? `👁️ Đã bật hiển thị "${GAME_TYPES.find(g=>g.type===type)?.name}"` : `🙈 Đã ẩn "${GAME_TYPES.find(g=>g.type===type)?.name}"`, 'ok');
+  }catch(e){
+    console.error(e);
+    showToast('❌ Lỗi kết nối tới Apps Script, thử lại sau','bad');
+  }
+}
+
 function previewChallenge(){
   const seed=+document.getElementById('cSeed').value||1;
   const{board}=generateSudoku(currentDiff,seed);
@@ -744,20 +1183,7 @@ function isSafe(b,r,c,n){if(b[r].includes(n))return false;if(b.some(row=>row[c]=
 // ══════════════════════════════════════════════════════════════
 //  SPOT DIFFERENCE
 // ══════════════════════════════════════════════════════════════
-function getMaxSpots(){
-  return parseInt(document.getElementById('spTargetCount').value) || 10;
-}
-function onSpTargetChange(){
-  const max = getMaxSpots();
-  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + max;
-  // Nếu đã đánh dấu nhiều hơn số mới, cắt bớt cho khớp
-  if(spSpots.length > max){
-    spSpots = spSpots.slice(0, max);
-    updateSpotList();
-    redrawCanvases();
-    document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + max;
-  }
-}
+const MAX_SPOTS = 10;
 let spSpots = [];
 let spImg1Data = null;
 let spImg2Data = null;
@@ -798,7 +1224,7 @@ function previewSpotImg(side){
 }
 
 function handleSpotClick(e){
-  if(spSpots.length >= getMaxSpots()){ showToast(`Đã đủ ${getMaxSpots()} điểm!`,''); return; }
+  if(spSpots.length >= MAX_SPOTS){ showToast(`Đã đủ ${MAX_SPOTS} điểm!`,''); return; }
   if(!spImg2Data){ showToast('Vui lòng tải ảnh trước!','bad'); return; }
   const wrap = document.getElementById('sp-right-wrap');
   const img = document.getElementById('sp-preview-right');
@@ -809,7 +1235,7 @@ function handleSpotClick(e){
   spSpots.push({ rightX:pctX, rightY:pctY, leftX:pctX, leftY:pctY });
   updateSpotList();
   redrawCanvases();
-  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + getMaxSpots();
+  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + MAX_SPOTS;
 }
 
 function redrawCanvases(){
@@ -864,14 +1290,14 @@ function removeSpot(i){
   spSpots.splice(i,1);
   updateSpotList();
   redrawCanvases();
-  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + getMaxSpots();
+  document.getElementById('spSpotCount').textContent = spSpots.length + ' / ' + MAX_SPOTS;
 }
 
 function clearSpots(){
   spSpots=[];
   updateSpotList();
   redrawCanvases();
-  document.getElementById('spSpotCount').textContent = '0 / ' + getMaxSpots();
+  document.getElementById('spSpotCount').textContent = '0 / ' + MAX_SPOTS;
 }
 
 async function publishSpot(){
@@ -882,7 +1308,7 @@ async function publishSpot(){
   if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
   if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
   if(!spImg1Data||!spImg2Data){ showToast('Vui lòng xem trước đủ 2 ảnh!','bad'); return; }
-  if(spSpots.length < getMaxSpots()){ showToast(`Cần đánh dấu đủ ${getMaxSpots()} điểm! (hiện có ${spSpots.length})`,'bad'); return; }
+  if(spSpots.length < MAX_SPOTS){ showToast(`Cần đánh dấu đủ ${MAX_SPOTS} điểm! (hiện có ${spSpots.length})`,'bad'); return; }
 
   const ch = {
     id: nextId++,
@@ -943,7 +1369,7 @@ function loadManage(){
   const active=challenges.filter(c=>c.status==='active'&&new Date(c.deadline)>now);
   document.getElementById('activeCount').textContent=active.length;
   const al=document.getElementById('activeList');
-  const typeLabel={sudoku:'🔢 Sudoku','spot-difference':'🔍 Spot','memory-match':'🃏 Lật Thẻ','sticker-puzzle':'🧩 Sticker Puzzle'};
+  const typeLabel={sudoku:'🔢 Sudoku','spot-difference':'🔍 Spot','memory-match':'🃏 Lật Thẻ','sticker-puzzle':'🧩 Sticker Puzzle','clean-space':'🧹 Dọn Dẹp'};
   if(!active.length){
     al.innerHTML='<div style="text-align:center;padding:24px;color:var(--t3)">😴 Không có ván nào đang active</div>';
   }else{
@@ -961,9 +1387,11 @@ function loadManage(){
             ${ch.type==='sudoku'?`<span class="act-tag">${diffN[ch.difficulty]||ch.difficulty}</span>`:''}
             ${ch.type==='spot-difference'?`<span class="act-tag">⏱ ${Math.floor((ch.timeLimit||180)/60)}:${String((ch.timeLimit||180)%60).padStart(2,'0')}</span>`:''}
             ${ch.type==='memory-match'?`<span class="act-tag">🎴 ${ch.cards?.length||0} cặp</span>`:''}
+                ${ch.type==='clean-space'?`<span class="act-tag">🧹 ${ch.tasks?.length||0} nhiệm vụ</span>`:''}
           </div>
         </div>
         <div class="active-ch-actions">
+          ${ch.type==='clean-space'?`<button class="ab ab-ext" onclick="editCleanSpace(${ch.id})">✏️ Sửa</button>`:''}
           <button class="ab ab-stop" onclick="stopChallenge(${ch.id})">⏹ Dừng</button>
           <button class="ab ab-ext" onclick="extendChallenge(${ch.id},1)">+1h</button>
           <button class="ab ab-ext" onclick="extendChallenge(${ch.id},24)">+24h</button>
@@ -1005,7 +1433,7 @@ function extendChallenge(id,hours){
 }
 function viewResultsForChallenge(id){
   document.getElementById('filterCh').value=id;
-  switchPage('results',document.querySelectorAll('.nav-item')[3]);
+  switchPage('results',[...document.querySelectorAll('.nav-item')].find(n=>n.getAttribute('onclick')?.includes("switchPage('results'")));
   loadResults();
 }
 
@@ -1016,7 +1444,7 @@ async function loadResults(){
   const filter=document.getElementById('filterCh').value;
   const sel=document.getElementById('filterCh');
   const existing=new Set([...sel.options].map(o=>o.value));
-  const typeLabel={sudoku:'🔢','spot-difference':'🔍','memory-match':'🃏','sticker-puzzle':'🧩'};
+  const typeLabel={sudoku:'🔢','spot-difference':'🔍','memory-match':'🃏','sticker-puzzle':'🧩','clean-space':'🧹'};
   challenges.forEach(c=>{
     if(!existing.has(String(c.id))){
       const opt=document.createElement('option');

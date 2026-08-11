@@ -68,6 +68,16 @@
 .cs-rag.dragging{ cursor:grabbing; z-index: 35; }
 .cs-rag svg{ width:100%; height:100%; }
 
+.cs-trash-bin{
+  position:absolute; width:56px; height:56px;
+  z-index:14; pointer-events:none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.22));
+}
+.cs-trash-default{
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-size:30px; background:var(--white); border:2px solid var(--border); border-radius:50%;
+}
+
 .cs-sparkle{ position:absolute; pointer-events:none; font-size:18px; animation: csPop .5s ease forwards; z-index:40; }
 @keyframes csPop{ 0%{ transform: scale(.4) translateY(0); opacity:1; } 100%{ transform: scale(1.3) translateY(-22px); opacity:0; } }
 
@@ -385,9 +395,26 @@ function buildTasks(){
   layer.innerHTML = '';
   const oldRag = document.getElementById('csRag');
   if(oldRag) oldRag.remove();
+  const oldFront = document.getElementById('csFrontOverlay');
+  if(oldFront) oldFront.remove();
+  const oldTrash = document.getElementById('csTrashBin');
+  if(oldTrash) oldTrash.remove();
   G.itemEls = []; G.stainEls = [];
 
   const hasWipe = G.tasks.some(t => t.kind === 'wipe');
+  const hasTrashTask = G.tasks.some(t => t.kind === 'place' && t.targetType === 'trash');
+
+  // Icon thùng rác chung (cấp ván) — chỉ tạo nếu màn này có nhiệm vụ nhắm tới nó
+  let trashEl = null;
+  if(hasTrashTask){
+    trashEl = document.createElement('div');
+    trashEl.className = 'cs-trash-bin'; trashEl.id = 'csTrashBin';
+    trashEl.innerHTML = G.ch.trashImage
+      ? `<img src="${escH(G.ch.trashImage)}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none" draggable="false">`
+      : `<div class="cs-trash-default">🗑️</div>`;
+    stage.appendChild(trashEl);
+    positionTrashBin(trashEl, stage);
+  }
 
   G.tasks.forEach((t, idx) => {
     const sizePct = t.sizePct || 8;
@@ -409,16 +436,24 @@ function buildTasks(){
       layer.appendChild(el);
       G.stainEls.push(el);
     } else if(t.kind === 'place'){
-      // Vùng đích
-      const zone = document.createElement('div');
-      zone.className = 'cs-zone';
-      zone.dataset.idx = idx;
-      zone.style.left = (t.toX*100) + '%';
-      zone.style.top = (t.toY*100) + '%';
-      zone.style.width = sizePct + '%';
-      zone.style.aspectRatio = '1';
-      zone.style.transform = 'translate(-50%,-50%)';
-      layer.appendChild(zone);
+      const isTrashTarget = t.targetType === 'trash';
+
+      // Vùng đích: nếu nhắm vào thùng rác chung thì dùng luôn icon thùng rác làm đích,
+      // không vẽ ô vuông đứt nét riêng trên ảnh nữa.
+      let zone;
+      if(isTrashTarget){
+        zone = trashEl;
+      } else {
+        zone = document.createElement('div');
+        zone.className = 'cs-zone';
+        zone.dataset.idx = idx;
+        zone.style.left = (t.toX*100) + '%';
+        zone.style.top = (t.toY*100) + '%';
+        zone.style.width = sizePct + '%';
+        zone.style.aspectRatio = '1';
+        zone.style.transform = 'translate(-50%,-50%)';
+        layer.appendChild(zone);
+      }
 
       // Vật thể kéo được
       const item = document.createElement('div');
@@ -438,6 +473,16 @@ function buildTasks(){
     }
   });
 
+  // Lớp phủ trước (che vật thể) — nằm TRÊN vật thể kéo-thả nhưng DƯỚI khăn lau
+  if(G.stage.frontOverlay){
+    const front = document.createElement('img');
+    front.id = 'csFrontOverlay';
+    front.src = G.stage.frontOverlay;
+    front.draggable = false;
+    front.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;z-index:8';
+    stage.appendChild(front);
+  }
+
   if(hasWipe){
     const rag = document.createElement('div');
     rag.className = 'cs-rag'; rag.id = 'csRag';
@@ -455,6 +500,19 @@ function buildTasks(){
 }
 
 // ── WIPE TASK (khăn lau) ──────────────────────────────────────
+function positionTrashBin(el, stage){
+  const sr = stage.getBoundingClientRect();
+  const ew = el.offsetWidth || 56, eh = el.offsetHeight || 56;
+  if(G.ch.trashX!=null && G.ch.trashY!=null){
+    el.style.left = Math.round(G.ch.trashX*sr.width - ew/2) + 'px';
+    el.style.top  = Math.round(G.ch.trashY*sr.height - eh/2) + 'px';
+  } else {
+    // Mặc định: góc dưới phải
+    el.style.right = '14px';
+    el.style.bottom = '14px';
+  }
+}
+
 function getRagHomePos(rag, stage){
   const sr = stage.getBoundingClientRect();
   const rw = rag.offsetWidth || 60, rh = rag.offsetHeight || 40;

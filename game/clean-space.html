@@ -80,6 +80,19 @@
 .cs-toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
 .cs-toast b{ color: var(--orange); }
 
+.cs-stage-transition{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background: rgba(250,246,238,0); pointer-events:none;
+  opacity:0; transition: all .35s ease; z-index:60;
+}
+.cs-stage-transition.show{ background: rgba(250,246,238,0.92); opacity:1; }
+.cs-stage-trans-inner{
+  text-align:center; font-size:20px; font-weight:800; color:var(--text);
+  transform: scale(0.85); transition: transform .35s ease;
+}
+.cs-stage-transition.show .cs-stage-trans-inner{ transform: scale(1); }
+.cs-stage-trans-inner span{ font-size:13px; font-weight:600; color:var(--t3); display:block; margin-top:4px; }
+
 .score-big{font-family:var(--mono);font-size:48px;font-weight:500;color:var(--orange);line-height:1;margin:10px 0 4px;}
 .score-sub{font-size:13px;color:var(--t2);margin-bottom:16px;}
 
@@ -236,7 +249,9 @@ function renderChallengeList(){
   const grid = document.createElement('div'); grid.className='ch-grid';
   active.forEach(ch => {
     const played = playedChallenges[ch.id];
-    const taskCount = ch.tasks ? ch.tasks.length : 0;
+    const stages = (ch.stages && ch.stages.length) ? ch.stages : [{tasks: ch.tasks||[]}];
+    const taskCount = stages.reduce((s,st)=>s+(st.tasks?.length||0), 0);
+    const stageCount = stages.length;
     const card = document.createElement('div');
     card.className='ch-card'+(played?' played':'');
     card.innerHTML=`
@@ -246,7 +261,7 @@ function renderChallengeList(){
       <div class="ch-title">${escH(ch.title)}</div>
       <div class="ch-desc">${escH(ch.description||'Dọn sạch không gian bằng cách xử lý đúng từng nhiệm vụ!')}</div>
       <div class="ch-meta">
-        <span class="ch-meta-item">🧽 ${taskCount} nhiệm vụ</span>
+        <span class="ch-meta-item">🧽 ${stageCount>1?`${stageCount} màn · `:''}${taskCount} nhiệm vụ</span>
         <span class="ch-meta-item">⏰ <span class="ch-countdown" id="cd-${ch.id}"></span></span>
       </div>
       ${played?`<div class="ch-played-badge">✅ Đã chơi — ${formatTime(played.time)}</div>`:''}`;
@@ -279,12 +294,30 @@ function startGame(ch){
   document.getElementById('listView').style.display='none';
   document.getElementById('gameView').style.display='block';
   document.getElementById('gameTitle').textContent = ch.title;
-  document.getElementById('gameSubtitle').textContent = `${(ch.tasks||[]).length} nhiệm vụ`;
+
+  // Chuẩn hoá: ván cũ (1 màn, dữ liệu nằm ở gốc) → bọc thành mảng stages có 1 phần tử
+  const stages = (ch.stages && ch.stages.length) ? ch.stages : [{
+    background: ch.background || '',
+    ragImage: ch.ragImage || '',
+    ragHomeX: ch.ragHomeX ?? null,
+    ragHomeY: ch.ragHomeY ?? null,
+    tasks: ch.tasks || []
+  }];
+  const totalTasks = stages.reduce((sum,s)=>sum+(s.tasks?.length||0), 0);
+
+  document.getElementById('gameSubtitle').textContent = stages.length>1
+    ? `${stages.length} màn · ${totalTasks} nhiệm vụ`
+    : `${totalTasks} nhiệm vụ`;
 
   G = {
     ch,
-    tasks: ch.tasks || [],
+    stages,
+    stageIdx: 0,
+    stage: null,
+    tasks: [],
+    totalTasks,
     doneCount: 0,
+    stageDoneCount: 0,
     misses: 0,
     timer: 0,
     interval: null,
@@ -298,7 +331,6 @@ function startGame(ch){
 function renderGame(){
   const ch = G.ch;
   const played = playedChallenges[ch.id];
-  const total = G.tasks.length;
 
   document.getElementById('gameArea').innerHTML = `
     ${played?`<div class="already-played">✅ Đã hoàn thành với <strong>${formatTime(played.time)}</strong>. Chơi lại không tính điểm.</div>`:''}
@@ -309,29 +341,50 @@ function renderGame(){
         <div class="cs-stat-val" id="csDone">0</div>
         <div class="cs-stat-lbl">Đã xong</div>
       </div>
+      ${G.stages.length>1?`<div class="cs-sep"></div>
+      <div class="cs-stat">
+        <div class="cs-stat-val" id="csStageLbl">1/${G.stages.length}</div>
+        <div class="cs-stat-lbl">Màn</div>
+      </div>`:''}
       <div class="cs-sep"></div>
       <div class="cs-progress">
-        <div class="cs-prog-lbl" id="csProgLbl">0 / ${total} nhiệm vụ</div>
+        <div class="cs-prog-lbl" id="csProgLbl">0 / ${G.totalTasks} nhiệm vụ</div>
         <div class="cs-prog-track"><div class="cs-prog-fill" id="csProgFill" style="width:0%"></div></div>
       </div>
     </div>
     <div class="cs-stage-wrap">
       <div class="cs-stage" id="csStage">
-        <img class="cs-bg" id="csBg" src="${escH(ch.background||'')}" draggable="false" alt="Không gian cần dọn dẹp">
+        <img class="cs-bg" id="csBg" src="" draggable="false" alt="Không gian cần dọn dẹp">
         <div class="cs-layer" id="csTasksLayer"></div>
         <div class="cs-toast" id="csToast"></div>
+        <div class="cs-stage-transition" id="csStageTransition"></div>
       </div>
     </div>`;
 
+  loadStage(0);
+}
+
+function loadStage(idx){
+  G.stageIdx = idx;
+  G.stage = G.stages[idx];
+  G.tasks = G.stage.tasks || [];
+  G.stageDoneCount = 0;
+
+  const stageLbl = document.getElementById('csStageLbl');
+  if(stageLbl) stageLbl.textContent = `${idx+1}/${G.stages.length}`;
+
   const bg = document.getElementById('csBg');
-  if(bg.complete) buildTasks(); else bg.onload = buildTasks;
+  bg.src = escH(G.stage.background || '');
   bg.onerror = () => { document.getElementById('csTasksLayer').innerHTML = '<p style="padding:24px;color:var(--red);text-align:center">Không tải được ảnh nền.</p>'; };
+  if(bg.complete && bg.src) buildTasks(); else bg.onload = buildTasks;
 }
 
 function buildTasks(){
   const stage = document.getElementById('csStage');
   const layer = document.getElementById('csTasksLayer');
   layer.innerHTML = '';
+  const oldRag = document.getElementById('csRag');
+  if(oldRag) oldRag.remove();
   G.itemEls = []; G.stainEls = [];
 
   const hasWipe = G.tasks.some(t => t.kind === 'wipe');
@@ -388,8 +441,8 @@ function buildTasks(){
   if(hasWipe){
     const rag = document.createElement('div');
     rag.className = 'cs-rag'; rag.id = 'csRag';
-    rag.innerHTML = G.ch.ragImage
-      ? `<img src="${escH(G.ch.ragImage)}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none" draggable="false">`
+    rag.innerHTML = G.stage.ragImage
+      ? `<img src="${escH(G.stage.ragImage)}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none" draggable="false">`
       : `<svg viewBox="0 0 100 70">
       <rect x="6" y="6" width="88" height="58" rx="10" fill="#f2f0e6" stroke="#d8d2c0" stroke-width="3"/>
       <path d="M6 20 H94" stroke="#d8d2c0" stroke-width="3"/><path d="M6 46 H94" stroke="#d8d2c0" stroke-width="3"/>
@@ -402,9 +455,25 @@ function buildTasks(){
 }
 
 // ── WIPE TASK (khăn lau) ──────────────────────────────────────
+function getRagHomePos(rag, stage){
+  const sr = stage.getBoundingClientRect();
+  const rw = rag.offsetWidth || 60, rh = rag.offsetHeight || 40;
+  if(G.stage.ragHomeX!=null && G.stage.ragHomeY!=null){
+    return {
+      left: Math.round(G.stage.ragHomeX*sr.width - rw/2) + 'px',
+      top : Math.round(G.stage.ragHomeY*sr.height - rh/2) + 'px'
+    };
+  }
+  // Mặc định: góc dưới trái (giữ hành vi cũ nếu admin không đặt vị trí riêng)
+  return { left: '14px', top: Math.round(sr.height - rh - 14) + 'px' };
+}
+
 function setupRag(rag, stage){
   let dragging=false, offX=0, offY=0;
-  const homeLeft = rag.style.left, homeBottom = rag.style.bottom;
+
+  // Đặt vị trí gốc ban đầu
+  const home = getRagHomePos(rag, stage);
+  rag.style.left = home.left; rag.style.top = home.top; rag.style.bottom = 'auto';
 
   function start(cx,cy){
     dragging=true; rag.classList.add('dragging');
@@ -434,7 +503,8 @@ function setupRag(rag, stage){
       if(isHit) hit=s; s.style.filter='';
     });
     if(hit) onWipeSuccess(hit);
-    rag.style.left='14px'; rag.style.bottom='14px'; rag.style.top='';
+    const homePos = getRagHomePos(rag, stage);
+    rag.style.left = homePos.left; rag.style.top = homePos.top;
   }
 
   rag.addEventListener('mousedown', e=>start(e.clientX,e.clientY));
@@ -495,10 +565,19 @@ function itemEnd(cx,cy){
     const snapX = zr.left - sr.left + (zr.width-iw)/2;
     const snapY = zr.top - sr.top + (zr.height-ih)/2;
     activeItem.style.left=snapX+'px'; activeItem.style.top=snapY+'px';
-    activeItem.classList.add('placed');
-    const badge=document.createElement('div'); badge.className='placed-badge'; badge.textContent='✓';
-    activeItem.appendChild(badge);
-    spawnSparkle({getBoundingClientRect:()=>({left:snapX+sr.left,top:snapY+sr.top,width:iw,height:ih})});
+
+    if(activeTask.placeAction === 'remove'){
+      // Biến mất — dành cho vứt rác, dọn đồ thừa
+      activeItem.classList.add('placed');
+      spawnSparkle({getBoundingClientRect:()=>({left:snapX+sr.left,top:snapY+sr.top,width:iw,height:ih})});
+      setTimeout(()=>{ activeItem.style.transition='opacity .3s ease, transform .3s ease'; activeItem.style.opacity='0'; activeItem.style.transform='scale(.4)'; }, 80);
+    } else {
+      // Giữ nguyên tại chỗ — dành cho cất đồ, kéo ghế...
+      activeItem.classList.add('placed');
+      const badge=document.createElement('div'); badge.className='placed-badge'; badge.textContent='✓';
+      activeItem.appendChild(badge);
+      spawnSparkle({getBoundingClientRect:()=>({left:snapX+sr.left,top:snapY+sr.top,width:iw,height:ih})});
+    }
     showCsToast(activeTask.noiquy);
     markTaskDone();
   } else {
@@ -542,11 +621,31 @@ function showCsToast(text){
 }
 function markTaskDone(){
   G.doneCount++;
-  const total=G.tasks.length;
+  G.stageDoneCount++;
   const doneEl=document.getElementById('csDone'); if(doneEl) doneEl.textContent=G.doneCount;
-  const fill=document.getElementById('csProgFill'); if(fill) fill.style.width=(G.doneCount/total*100)+'%';
-  const lbl=document.getElementById('csProgLbl'); if(lbl) lbl.textContent=`${G.doneCount} / ${total} nhiệm vụ`;
-  if(G.doneCount >= total){ setTimeout(()=>endGame(), 700); }
+  const fill=document.getElementById('csProgFill'); if(fill) fill.style.width=(G.doneCount/G.totalTasks*100)+'%';
+  const lbl=document.getElementById('csProgLbl'); if(lbl) lbl.textContent=`${G.doneCount} / ${G.totalTasks} nhiệm vụ`;
+
+  if(G.stageDoneCount >= G.tasks.length){
+    if(G.stageIdx < G.stages.length - 1){
+      setTimeout(()=>goToNextStage(), 700);
+    } else {
+      setTimeout(()=>endGame(), 700);
+    }
+  }
+}
+
+function goToNextStage(){
+  const trans = document.getElementById('csStageTransition');
+  const nextNum = G.stageIdx + 2;
+  if(trans){
+    trans.innerHTML = `<div class="cs-stage-trans-inner">🎉 Hoàn thành Màn ${G.stageIdx+1}!<br><span>Chuyển sang Màn ${nextNum}...</span></div>`;
+    trans.classList.add('show');
+  }
+  setTimeout(()=>{
+    if(trans) trans.classList.remove('show');
+    loadStage(G.stageIdx + 1);
+  }, 1400);
 }
 
 function endGame(){

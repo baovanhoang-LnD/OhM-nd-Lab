@@ -137,6 +137,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
 .cs-marker.from{background:rgba(224,62,62,.88);}
 .cs-marker.to{background:rgba(45,164,78,.88);}
 .cs-marker.rag{background:rgba(59,130,246,.9);font-size:14px;}
+.cs-marker.trash{background:rgba(16,163,74,.9);font-size:14px;}
 .cs-marker-line{position:absolute;pointer-events:none;}
 </style>
 </head>
@@ -478,6 +479,14 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <input type="datetime-local" id="csDeadline">
             </div>
             <hr class="dv">
+            <div class="card-label">🗑️ Thùng rác dùng chung (cho cả ván)</div>
+            <div class="tip tip-blue" style="margin-bottom:10px">📌 Dùng cho nhiệm vụ "vứt rác" ở BẤT KỲ màn nào — 1 icon cố định trên màn hình xuyên suốt cả ván, không cần xuất hiện trong từng ảnh nền.</div>
+            <div class="form-group">
+              <label class="form-label">Ảnh thùng rác — tùy chọn (để trống dùng icon mặc định 🗑️)</label>
+              <input type="text" id="csTrashUrl" placeholder="Dán link ảnh thùng rác (Google Drive/Imgur...)...">
+            </div>
+            <div id="csTrashPosInfo" style="font-size:12px;color:var(--t3);margin-bottom:4px">Chưa đặt vị trí — chọn "📍 Vị trí thùng rác" bên dưới rồi bấm lên ảnh.</div>
+            <hr class="dv">
             <div class="card-label">Các màn trong ván (<span id="csStageCount">0</span>)</div>
             <div class="tip tip-blue" style="margin-bottom:10px">📌 1 ván có thể gồm nhiều màn (VD: Màn 1 = bếp, Màn 2 = phòng họp...). Đánh dấu xong 1 màn → bấm "Lưu màn & Thêm màn mới" để chuyển sang màn tiếp theo. Nếu chỉ cần 1 màn, bỏ qua bước này và Publish như bình thường.</div>
             <div id="csStageChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
@@ -492,15 +501,30 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <label class="form-label">Ảnh khăn lau — tùy chọn (để trống dùng hình khăn mặc định)</label>
               <input type="text" id="csRagUrl" placeholder="Dán link ảnh khăn lau (Google Drive/Imgur...)...">
             </div>
+            <div class="form-group">
+              <label class="form-label">Ảnh lớp phủ trước — tùy chọn (che vật thể, VD: viền bàn)</label>
+              <input type="text" id="csFrontUrl" placeholder="Dán link ảnh PNG nền trong suốt, chỉ chứa phần cần che phía trước..." oninput="renderCsPreview()">
+              <div class="tip" style="margin-top:8px">📌 Dùng ảnh PNG nền trong suốt, kích thước khớp với ảnh nền — chỉ vẽ phần vật thể cần "che" (VD: mép bàn) để nó luôn nổi trên vật thể kéo-thả (VD: ghế).</div>
+            </div>
             <hr class="dv">
             <div class="card-label">Thêm nhiệm vụ cho màn này</div>
             <div class="tip" style="margin-bottom:10px" id="csModeHint">💡 Chọn loại nhiệm vụ, nhập nội quy, rồi bấm lên ảnh bên phải để đánh dấu vị trí.</div>
             <div class="form-group">
               <label class="form-label">Loại nhiệm vụ</label>
-              <div class="diff-grid" style="grid-template-columns:repeat(3,1fr)">
+              <div class="diff-grid" style="grid-template-columns:repeat(2,1fr)">
                 <div class="diff-card active" id="csModeWipeCard" onclick="setCsMode('wipe')"><div class="di">🧽</div><div class="dl">Lau vết bẩn</div><div class="ds">1 lần bấm = 1 vết bẩn</div></div>
-                <div class="diff-card" id="csModePlaceCard" onclick="setCsMode('place')"><div class="di">📦</div><div class="dl">Đặt đồ đúng chỗ</div><div class="ds">Bấm 2 lần: sai → đúng</div></div>
+                <div class="diff-card" id="csModePlaceCard" onclick="setCsMode('place')"><div class="di">📦</div><div class="dl">Đặt đồ đúng chỗ</div><div class="ds">Bấm 1-2 lần tùy đích đến</div></div>
+              </div>
+              <div class="diff-grid" style="grid-template-columns:repeat(2,1fr);margin-top:8px">
                 <div class="diff-card" id="csModeRagCard" onclick="setCsMode('ragpos')"><div class="di">📍</div><div class="dl">Vị trí gốc khăn</div><div class="ds">1 lần bấm = đặt vị trí</div></div>
+                <div class="diff-card" id="csModeTrashCard" onclick="setCsMode('trashpos')"><div class="di">🗑️</div><div class="dl">Vị trí thùng rác</div><div class="ds">1 lần bấm = đặt vị trí</div></div>
+              </div>
+            </div>
+            <div class="form-group" id="csPlaceTargetGroup" style="display:none">
+              <label class="form-label">Đích đến</label>
+              <div class="diff-grid" style="grid-template-columns:repeat(2,1fr)">
+                <div class="diff-card active" id="csTargetZoneCard" onclick="setCsPlaceTarget('zone')"><div class="di">📍</div><div class="dl">Vị trí trên ảnh</div><div class="ds">Bấm 2 lần: sai → đúng</div></div>
+                <div class="diff-card" id="csTargetTrashCard" onclick="setCsPlaceTarget('trash')"><div class="di">🗑️</div><div class="dl">Thùng rác chung</div><div class="ds">Bấm 1 lần: vị trí sai</div></div>
               </div>
             </div>
             <div class="form-group" id="csPlaceActionGroup" style="display:none">
@@ -824,8 +848,10 @@ let csPendingFrom = null;    // lưu tạm điểm "sai" khi đang đánh dấu 
 let csEditingId = null;      // MỚI: nếu khác null → đang sửa ván có ID này thay vì tạo mới
 let csPlaceAction = 'keep';  // MỚI: 'keep' (giữ nguyên) hoặc 'remove' (biến mất) cho nhiệm vụ 'place'
 let csRagHome = null;        // MỚI: {x,y} vị trí gốc khăn lau của màn đang soạn — null = mặc định
-let csStages = [];           // MỚI: danh sách các màn ĐÃ LƯU: [{background,ragImage,ragHomeX,ragHomeY,tasks}]
+let csStages = [];           // MỚI: danh sách các màn ĐÃ LƯU: [{background,ragImage,ragHomeX,ragHomeY,frontOverlay,tasks}]
 let csCurrentStageIdx = 0;   // MỚI: đang soạn màn thứ mấy (0-indexed) — chưa nằm trong csStages cho tới khi lưu
+let csPlaceTarget = 'zone';  // MỚI: 'zone' (đích trên ảnh, 2 click) hoặc 'trash' (thùng rác chung, 1 click)
+let csTrashHome = null;      // MỚI: {x,y} vị trí thùng rác — CẤP VÁN (không theo từng màn)
 
 function setCsMode(mode){
   csMode = mode;
@@ -833,8 +859,10 @@ function setCsMode(mode){
   document.getElementById('csModeWipeCard').classList.toggle('active', mode==='wipe');
   document.getElementById('csModePlaceCard').classList.toggle('active', mode==='place');
   document.getElementById('csModeRagCard').classList.toggle('active', mode==='ragpos');
-  document.getElementById('csPlaceActionGroup').style.display = mode==='place' ? 'block' : 'none';
-  document.getElementById('csIconGroup').style.display = mode==='ragpos' ? 'none' : 'block';
+  document.getElementById('csModeTrashCard').classList.toggle('active', mode==='trashpos');
+  document.getElementById('csPlaceTargetGroup').style.display = mode==='place' ? 'block' : 'none';
+  document.getElementById('csPlaceActionGroup').style.display = (mode==='place' && csPlaceTarget==='zone') ? 'block' : 'none';
+  document.getElementById('csIconGroup').style.display = (mode==='ragpos' || mode==='trashpos') ? 'none' : 'block';
 
   if(mode==='wipe'){
     document.getElementById('csModeHint').textContent = '💡 Nhập nội quy (và ảnh vết bẩn nếu muốn), rồi bấm lên ảnh bên phải — mỗi lần bấm = 1 vết bẩn mới.';
@@ -842,15 +870,36 @@ function setCsMode(mode){
     document.getElementById('csIconLabel').textContent = 'Ảnh vết bẩn — tùy chọn (để trống sẽ dùng hình vết bẩn mặc định)';
     document.getElementById('csItemIcon').placeholder = 'Dán link ảnh vết bẩn (cà phê, dầu mỡ...) — để trống nếu dùng mặc định';
   } else if(mode==='place'){
-    document.getElementById('csModeHint').textContent = '💡 Chọn hành vi bên dưới, nhập nội quy + icon vật thể, rồi bấm lên ảnh 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.';
-    document.getElementById('csClickHint').textContent = '👁 Bấm lần 1 = vị trí đồ đang để sai (màu đỏ). Bấm lần 2 = vị trí đúng quy định (màu xanh).';
+    updateCsPlaceHints();
     document.getElementById('csIconLabel').textContent = 'Icon vật thể (emoji) hoặc link ảnh — tùy chọn';
     document.getElementById('csItemIcon').placeholder = 'VD: 🗑️ hoặc link ảnh vật thể...';
   } else if(mode==='ragpos'){
     document.getElementById('csModeHint').textContent = '💡 Bấm 1 lần lên ảnh để đặt vị trí khăn lau sẽ nằm khi bắt đầu chơi (không cần nhập nội quy).';
     document.getElementById('csClickHint').textContent = '👁 Bấm 1 lần lên ảnh để đặt vị trí gốc của khăn lau.';
+  } else if(mode==='trashpos'){
+    document.getElementById('csModeHint').textContent = '💡 Bấm 1 lần lên ảnh để đặt vị trí icon thùng rác trên màn hình (dùng chung cho mọi màn, không cần nhập nội quy).';
+    document.getElementById('csClickHint').textContent = '👁 Bấm 1 lần lên ảnh để đặt vị trí thùng rác.';
   }
   renderCsMarkers();
+}
+
+function setCsPlaceTarget(target){
+  csPlaceTarget = target;
+  csPendingFrom = null;
+  document.getElementById('csTargetZoneCard').classList.toggle('active', target==='zone');
+  document.getElementById('csTargetTrashCard').classList.toggle('active', target==='trash');
+  document.getElementById('csPlaceActionGroup').style.display = target==='zone' ? 'block' : 'none';
+  if(target==='trash') setCsPlaceAction('remove'); // Thùng rác luôn "biến mất"
+  updateCsPlaceHints();
+}
+
+function updateCsPlaceHints(){
+  document.getElementById('csModeHint').textContent = csPlaceTarget==='trash'
+    ? '💡 Nhập nội quy + icon vật thể, rồi bấm lên ảnh 1 lần: vị trí vật đang để sai (vật sẽ tự bay vào thùng rác chung).'
+    : '💡 Chọn hành vi bên dưới, nhập nội quy + icon vật thể, rồi bấm lên ảnh 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.';
+  document.getElementById('csClickHint').textContent = csPlaceTarget==='trash'
+    ? '👁 Bấm 1 lần = vị trí đồ đang để sai. Không cần đánh dấu đích vì đích là thùng rác chung.'
+    : '👁 Bấm lần 1 = vị trí đồ đang để sai (màu đỏ). Bấm lần 2 = vị trí đúng quy định (màu xanh).';
 }
 
 function setCsPlaceAction(action){
@@ -866,6 +915,7 @@ function getCurrentStageDraft(){
     ragImage: gdriveDirect(document.getElementById('csRagUrl').value.trim()) || '',
     ragHomeX: csRagHome ? csRagHome.x : null,
     ragHomeY: csRagHome ? csRagHome.y : null,
+    frontOverlay: gdriveDirect(document.getElementById('csFrontUrl').value.trim()) || '',
     tasks: csTasks
   };
 }
@@ -873,6 +923,7 @@ function getCurrentStageDraft(){
 function loadStageDraft(stage){
   document.getElementById('csBgUrl').value = stage.background || '';
   document.getElementById('csRagUrl').value = stage.ragImage || '';
+  document.getElementById('csFrontUrl').value = stage.frontOverlay || '';
   csRagHome = (stage.ragHomeX!=null && stage.ragHomeY!=null) ? {x:stage.ragHomeX, y:stage.ragHomeY} : null;
   csTasks = JSON.parse(JSON.stringify(stage.tasks || []));
   csPendingFrom = null;
@@ -952,13 +1003,15 @@ function renderCsStageChips(){
 
 function renderCsPreview(){
   const url = gdriveDirect(document.getElementById('csBgUrl').value.trim());
+  const frontUrl = gdriveDirect(document.getElementById('csFrontUrl').value.trim());
   const wrap = document.getElementById('csPreviewWrap');
   if(!url){
     wrap.innerHTML = '<span style="color:var(--t3);font-size:13px;padding:24px">Dán link ảnh nền để bắt đầu đánh dấu</span>';
     return;
   }
   wrap.innerHTML = `<img id="csBgImg" src="${url}" style="display:block;width:100%;height:auto;pointer-events:none;user-select:none" draggable="false">
-    <div id="csMarkers" style="position:absolute;inset:0"></div>`;
+    <div id="csMarkers" style="position:absolute;inset:0"></div>
+    ${frontUrl?`<img id="csFrontImg" src="${frontUrl}" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;z-index:5" draggable="false">`:''}`;
   wrap.onclick = onCsPreviewClick;
   const img = document.getElementById('csBgImg');
   img.onerror = ()=>{ wrap.innerHTML = '<span style="color:var(--red);font-size:13px;padding:24px">❌ Không tải được ảnh nền. Kiểm tra link/quyền chia sẻ.</span>'; };
@@ -981,6 +1034,15 @@ function onCsPreviewClick(e){
     return;
   }
 
+  // Chế độ đặt vị trí thùng rác chung (cấp ván, không theo từng màn) — không cần nội quy
+  if(csMode === 'trashpos'){
+    csTrashHome = { x, y };
+    updateCsTrashPosInfo();
+    renderCsMarkers();
+    showToast('🗑️ Đã đặt vị trí thùng rác chung!','ok');
+    return;
+  }
+
   const noiquy = document.getElementById('csNoiquy').value.trim();
   if(!noiquy){ showToast('Nhập nội quy trước khi đánh dấu vị trí!','bad'); return; }
   const sizePct = +document.getElementById('csSizePct').value || 9;
@@ -995,6 +1057,24 @@ function onCsPreviewClick(e){
     renderCsMarkers();
     renderCsList();
     showToast('🧽 Đã thêm vết bẩn!','ok');
+  } else if(csPlaceTarget === 'trash'){
+    // Đích đến = thùng rác chung → chỉ cần 1 click (vị trí sai), không cần đánh dấu đích
+    const isImg = /^https?:\/\//.test(icon);
+    const iconDirect = isImg ? gdriveDirect(icon) : icon;
+    csTasks.push({
+      kind:'place',
+      fromX: x, fromY: y,
+      targetType: 'trash',
+      sizePct, noiquy,
+      icon: isImg ? '' : (iconDirect || '📦'),
+      image: isImg ? iconDirect : '',
+      placeAction: 'remove'
+    });
+    document.getElementById('csNoiquy').value='';
+    document.getElementById('csItemIcon').value='';
+    renderCsMarkers();
+    renderCsList();
+    showToast('🗑️ Đã thêm nhiệm vụ vứt vào thùng rác chung!','ok');
   } else {
     if(!csPendingFrom){
       csPendingFrom = { x, y };
@@ -1007,10 +1087,11 @@ function onCsPreviewClick(e){
         kind:'place',
         fromX: csPendingFrom.x, fromY: csPendingFrom.y,
         toX: x, toY: y,
+        targetType: 'zone',
         sizePct, noiquy,
         icon: isImg ? '' : (iconDirect || '📦'),
         image: isImg ? iconDirect : '',
-        placeAction: csPlaceAction   // MỚI: 'keep' hoặc 'remove'
+        placeAction: csPlaceAction   // 'keep' hoặc 'remove'
       });
       csPendingFrom = null;
       document.getElementById('csNoiquy').value='';
@@ -1022,6 +1103,14 @@ function onCsPreviewClick(e){
   }
 }
 
+function updateCsTrashPosInfo(){
+  const el = document.getElementById('csTrashPosInfo');
+  if(!el) return;
+  el.textContent = csTrashHome
+    ? `✅ Đã đặt vị trí thùng rác tại (${Math.round(csTrashHome.x*100)}%, ${Math.round(csTrashHome.y*100)}%)`
+    : 'Chưa đặt vị trí — chọn "🗑️ Vị trí thùng rác" bên dưới rồi bấm lên ảnh.';
+}
+
 function renderCsMarkers(){
   const holder = document.getElementById('csMarkers');
   if(!holder) return;
@@ -1029,6 +1118,8 @@ function renderCsMarkers(){
   csTasks.forEach((t,i)=>{
     if(t.kind==='wipe'){
       html += `<div class="cs-marker wipe" style="left:${t.x*100}%;top:${t.y*100}%">${i+1}</div>`;
+    } else if(t.targetType==='trash'){
+      html += `<div class="cs-marker from" style="left:${t.fromX*100}%;top:${t.fromY*100}%" title="Vứt vào thùng rác chung">${i+1}</div>`;
     } else {
       html += `<div class="cs-marker from" style="left:${t.fromX*100}%;top:${t.fromY*100}%">${i+1}</div>`;
       html += `<div class="cs-marker to" style="left:${t.toX*100}%;top:${t.toY*100}%">${i+1}</div>`;
@@ -1040,6 +1131,9 @@ function renderCsMarkers(){
   if(csRagHome){
     html += `<div class="cs-marker rag" style="left:${csRagHome.x*100}%;top:${csRagHome.y*100}%" title="Vị trí gốc khăn lau">🧻</div>`;
   }
+  if(csTrashHome){
+    html += `<div class="cs-marker trash" style="left:${csTrashHome.x*100}%;top:${csTrashHome.y*100}%" title="Vị trí thùng rác chung">🗑️</div>`;
+  }
   holder.innerHTML = html;
 }
 
@@ -1050,11 +1144,16 @@ function renderCsList(){
     list.innerHTML = '<div style="font-size:12px;color:var(--t3);padding:8px">Chưa có nhiệm vụ nào được đánh dấu.</div>';
     return;
   }
-  list.innerHTML = csTasks.map((t,i)=>`
+  list.innerHTML = csTasks.map((t,i)=>{
+    let subLabel = '';
+    if(t.kind==='place'){
+      subLabel = t.targetType==='trash' ? ' · 🗑️ vào thùng rác chung' : ` · ${t.placeAction==='remove'?'🗑️ biến mất':'📌 giữ nguyên'}`;
+    }
+    return `
     <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
       <span style="font-size:16px">${t.image?`<img src="${escH(t.image)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;border-radius:4px">`:(t.kind==='wipe'?'🧽':(t.icon||'📦'))}</span>
       <div style="flex:1;font-size:12px">
-        <div style="font-weight:700">#${i+1} · ${t.kind==='wipe'?'Lau vết bẩn':'Đặt đồ đúng chỗ'}${t.kind==='place'?` · ${t.placeAction==='remove'?'🗑️ biến mất':'📌 giữ nguyên'}`:''}</div>
+        <div style="font-weight:700">#${i+1} · ${t.kind==='wipe'?'Lau vết bẩn':'Đặt đồ đúng chỗ'}${subLabel}</div>
         <div style="color:var(--t3)">${escH(t.noiquy).slice(0,60)}${t.noiquy.length>60?'…':''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
@@ -1064,7 +1163,8 @@ function renderCsList(){
         <span style="font-size:10px;color:var(--t3)">%</span>
       </div>
       <button class="btn btn-secondary btn-sm" onclick="removeCsTask(${i})" title="Xoá">🗑</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function updateCsTaskSize(i, val){
@@ -1097,10 +1197,14 @@ async function publishCleanSpace(){
 
   const isEditing = csEditingId !== null;
   const totalTasks = finalStages.reduce((sum,s)=>sum+s.tasks.length, 0);
+  const trashImage = gdriveDirect(document.getElementById('csTrashUrl').value.trim());
   const ch = {
     id: isEditing ? csEditingId : nextId++,
     type: 'clean-space',
     title, description: document.getElementById('csDesc').value.trim(),
+    trashImage: trashImage || '',
+    trashX: csTrashHome ? csTrashHome.x : null,
+    trashY: csTrashHome ? csTrashHome.y : null,
     stages: finalStages,
     deadline: new Date(deadlineVal).toISOString(),
     status: 'active',
@@ -1141,6 +1245,8 @@ function resetCsForm(){
   document.getElementById('csDesc').value='';
   document.getElementById('csBgUrl').value='';
   document.getElementById('csRagUrl').value='';
+  document.getElementById('csFrontUrl').value='';
+  document.getElementById('csTrashUrl').value='';
   document.getElementById('csNoiquy').value='';
   document.getElementById('csItemIcon').value='';
   csStages = [];
@@ -1149,7 +1255,10 @@ function resetCsForm(){
   csPendingFrom = null;
   csEditingId = null;
   csRagHome = null;
+  csTrashHome = null;
   setCsPlaceAction('keep');
+  setCsPlaceTarget('zone');
+  updateCsTrashPosInfo();
   document.getElementById('csPublishBtn').textContent = '🚀 Publish';
   document.getElementById('csCancelEditBtn').style.display = 'none';
   document.querySelector('#page-clean .page-hdr h2').textContent = '🧹 Tạo Game Dọn Dẹp Không Gian';
@@ -1166,6 +1275,9 @@ function editCleanSpace(id){
   csEditingId = ch.id;
   document.getElementById('csTitle').value = ch.title || '';
   document.getElementById('csDesc').value = ch.description || '';
+  document.getElementById('csTrashUrl').value = ch.trashImage || '';
+  csTrashHome = (ch.trashX!=null && ch.trashY!=null) ? { x: ch.trashX, y: ch.trashY } : null;
+  updateCsTrashPosInfo();
 
   const d = new Date(ch.deadline);
   const pad = n=>String(n).padStart(2,'0');
@@ -1180,6 +1292,7 @@ function editCleanSpace(id){
       ragImage: ch.ragImage || '',
       ragHomeX: ch.ragHomeX ?? null,
       ragHomeY: ch.ragHomeY ?? null,
+      frontOverlay: ch.frontOverlay || '',
       tasks: ch.tasks || []
     }];
   }

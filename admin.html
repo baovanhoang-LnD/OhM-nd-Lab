@@ -1686,17 +1686,43 @@ function loadManage(){
     }).join('')}</tbody></table>`;
 }
 
-function stopChallenge(id){
+async function stopChallenge(id){
   const ch=challenges.find(c=>c.id===id);if(!ch)return;
   ch.deadline=new Date().toISOString();
   localStorage.setItem('bb_challenges',JSON.stringify(challenges));
-  showToast('⏹ Đã dừng challenge','ok');loadManage();
+  try{
+    const res = await fetch(`${SCRIPT_URL}?action=updateChallenge&key=${_key}&data=${encodeURIComponent(JSON.stringify(ch))}`);
+    const data = await res.json();
+    if(data.status !== 'ok'){
+      showToast(`⚠️ Không đồng bộ được lên server: ${data.message||'lỗi không rõ'}`,'bad');
+      loadManage();
+      return;
+    }
+    showToast('⏹ Đã dừng challenge (đã đồng bộ server)','ok');
+  }catch(e){
+    console.error(e);
+    showToast('❌ Lỗi kết nối tới Apps Script — challenge CHƯA được dừng trên server!','bad');
+  }
+  loadManage();
 }
-function extendChallenge(id,hours){
+async function extendChallenge(id,hours){
   const ch=challenges.find(c=>c.id===id);if(!ch)return;
   ch.deadline=new Date(new Date(ch.deadline).getTime()+hours*3600000).toISOString();
   localStorage.setItem('bb_challenges',JSON.stringify(challenges));
-  showToast(`⏰ Gia hạn thêm ${hours}h!`,'ok');loadManage();
+  try{
+    const res = await fetch(`${SCRIPT_URL}?action=updateChallenge&key=${_key}&data=${encodeURIComponent(JSON.stringify(ch))}`);
+    const data = await res.json();
+    if(data.status !== 'ok'){
+      showToast(`⚠️ Không đồng bộ được lên server: ${data.message||'lỗi không rõ'}`,'bad');
+      loadManage();
+      return;
+    }
+    showToast(`⏰ Gia hạn thêm ${hours}h (đã đồng bộ server)!`,'ok');
+  }catch(e){
+    console.error(e);
+    showToast('❌ Lỗi kết nối tới Apps Script — chưa gia hạn được trên server!','bad');
+  }
+  loadManage();
 }
 function viewResultsForChallenge(id){
   document.getElementById('filterCh').value=id;

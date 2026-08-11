@@ -136,6 +136,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
 .cs-marker.wipe{background:rgba(122,82,54,.9);}
 .cs-marker.from{background:rgba(224,62,62,.88);}
 .cs-marker.to{background:rgba(45,164,78,.88);}
+.cs-marker.rag{background:rgba(59,130,246,.9);font-size:14px;}
 .cs-marker-line{position:absolute;pointer-events:none;}
 </style>
 </head>
@@ -477,7 +478,12 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <input type="datetime-local" id="csDeadline">
             </div>
             <hr class="dv">
-            <div class="card-label">Bước 1 — Ảnh không gian</div>
+            <div class="card-label">Các màn trong ván (<span id="csStageCount">0</span>)</div>
+            <div class="tip tip-blue" style="margin-bottom:10px">📌 1 ván có thể gồm nhiều màn (VD: Màn 1 = bếp, Màn 2 = phòng họp...). Đánh dấu xong 1 màn → bấm "Lưu màn & Thêm màn mới" để chuyển sang màn tiếp theo. Nếu chỉ cần 1 màn, bỏ qua bước này và Publish như bình thường.</div>
+            <div id="csStageChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+            <button class="btn btn-secondary btn-sm" onclick="addNewCsStage()" style="margin-bottom:4px">➕ Lưu màn này & Thêm màn mới</button>
+            <hr class="dv">
+            <div class="card-label" id="csStepBgLabel">Ảnh không gian — Màn <span id="csCurrentStageNum">1</span></div>
             <div class="tip tip-blue" style="margin-bottom:10px">📌 Dùng ảnh chụp/vẽ không gian đang bừa bộn (bếp chung, phòng họp...). Google Drive: Share → Anyone with link → dán vào đây.</div>
             <div class="form-group">
               <input type="text" id="csBgUrl" placeholder="Dán link ảnh nền..." oninput="renderCsPreview()">
@@ -487,13 +493,21 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <input type="text" id="csRagUrl" placeholder="Dán link ảnh khăn lau (Google Drive/Imgur...)...">
             </div>
             <hr class="dv">
-            <div class="card-label">Bước 2 — Thêm nhiệm vụ</div>
+            <div class="card-label">Thêm nhiệm vụ cho màn này</div>
             <div class="tip" style="margin-bottom:10px" id="csModeHint">💡 Chọn loại nhiệm vụ, nhập nội quy, rồi bấm lên ảnh bên phải để đánh dấu vị trí.</div>
             <div class="form-group">
               <label class="form-label">Loại nhiệm vụ</label>
-              <div class="diff-grid" style="grid-template-columns:repeat(2,1fr)">
+              <div class="diff-grid" style="grid-template-columns:repeat(3,1fr)">
                 <div class="diff-card active" id="csModeWipeCard" onclick="setCsMode('wipe')"><div class="di">🧽</div><div class="dl">Lau vết bẩn</div><div class="ds">1 lần bấm = 1 vết bẩn</div></div>
                 <div class="diff-card" id="csModePlaceCard" onclick="setCsMode('place')"><div class="di">📦</div><div class="dl">Đặt đồ đúng chỗ</div><div class="ds">Bấm 2 lần: sai → đúng</div></div>
+                <div class="diff-card" id="csModeRagCard" onclick="setCsMode('ragpos')"><div class="di">📍</div><div class="dl">Vị trí gốc khăn</div><div class="ds">1 lần bấm = đặt vị trí</div></div>
+              </div>
+            </div>
+            <div class="form-group" id="csPlaceActionGroup" style="display:none">
+              <label class="form-label">Sau khi đặt đúng chỗ</label>
+              <div class="diff-grid" style="grid-template-columns:repeat(2,1fr)">
+                <div class="diff-card active" id="csPlaceKeepCard" onclick="setCsPlaceAction('keep')"><div class="di">📌</div><div class="dl">Giữ nguyên tại chỗ</div><div class="ds">VD: cất chén, kéo ghế</div></div>
+                <div class="diff-card" id="csPlaceRemoveCard" onclick="setCsPlaceAction('remove')"><div class="di">🗑️</div><div class="dl">Biến mất</div><div class="ds">VD: vứt rác, dọn đồ thừa</div></div>
               </div>
             </div>
             <div class="form-group" id="csIconGroup">
@@ -512,7 +526,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <textarea id="csNoiquy" placeholder="VD: Luôn lau bàn sau khi ăn uống ở khu vực bếp chung nhé!"></textarea>
             </div>
             <hr class="dv">
-            <div class="card-label">Danh sách nhiệm vụ đã đánh dấu (<span id="csCount">0</span>)</div>
+            <div class="card-label">Nhiệm vụ của màn này (<span id="csCount">0</span>)</div>
             <div id="csList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;margin-bottom:12px"></div>
             <hr class="dv">
             <div style="display:flex;gap:8px">
@@ -666,6 +680,7 @@ window.onload=()=>{
   randomSeed();
   updateSpotList();
   initMMCards();
+  renderCsStageChips();
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -803,29 +818,136 @@ function copyStkLink(){
 //  tasks: [{kind:'wipe', x,y, sizePct, noiquy, icon}]
 //         [{kind:'place', fromX,fromY, toX,toY, sizePct, noiquy, icon}]
 // ══════════════════════════════════════════════════════════════
-let csMode = 'wipe';         // 'wipe' hoặc 'place'
-let csTasks = [];            // danh sách nhiệm vụ đã đánh dấu
+let csMode = 'wipe';         // 'wipe' / 'place' / 'ragpos'
+let csTasks = [];            // danh sách nhiệm vụ của MÀN ĐANG SOẠN
 let csPendingFrom = null;    // lưu tạm điểm "sai" khi đang đánh dấu 'place' (chờ điểm "đúng")
 let csEditingId = null;      // MỚI: nếu khác null → đang sửa ván có ID này thay vì tạo mới
+let csPlaceAction = 'keep';  // MỚI: 'keep' (giữ nguyên) hoặc 'remove' (biến mất) cho nhiệm vụ 'place'
+let csRagHome = null;        // MỚI: {x,y} vị trí gốc khăn lau của màn đang soạn — null = mặc định
+let csStages = [];           // MỚI: danh sách các màn ĐÃ LƯU: [{background,ragImage,ragHomeX,ragHomeY,tasks}]
+let csCurrentStageIdx = 0;   // MỚI: đang soạn màn thứ mấy (0-indexed) — chưa nằm trong csStages cho tới khi lưu
 
 function setCsMode(mode){
   csMode = mode;
   csPendingFrom = null;
   document.getElementById('csModeWipeCard').classList.toggle('active', mode==='wipe');
   document.getElementById('csModePlaceCard').classList.toggle('active', mode==='place');
-  document.getElementById('csModeHint').textContent = mode==='wipe'
-    ? '💡 Nhập nội quy (và ảnh vết bẩn nếu muốn), rồi bấm lên ảnh bên phải — mỗi lần bấm = 1 vết bẩn mới.'
-    : '💡 Nhập nội quy + icon vật thể, rồi bấm lên ảnh 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.';
-  document.getElementById('csClickHint').textContent = mode==='wipe'
-    ? '👁 Mỗi lần bấm lên ảnh sẽ thêm 1 vết bẩn tại đúng điểm bấm.'
-    : '👁 Bấm lần 1 = vị trí đồ đang để sai (màu đỏ). Bấm lần 2 = vị trí đúng quy định (màu xanh).';
-  document.getElementById('csIconLabel').textContent = mode==='wipe'
-    ? 'Ảnh vết bẩn — tùy chọn (để trống sẽ dùng hình vết bẩn mặc định)'
-    : 'Icon vật thể (emoji) hoặc link ảnh — tùy chọn';
-  document.getElementById('csItemIcon').placeholder = mode==='wipe'
-    ? 'Dán link ảnh vết bẩn (cà phê, dầu mỡ...) — để trống nếu dùng mặc định'
-    : 'VD: 🗑️ hoặc link ảnh vật thể...';
+  document.getElementById('csModeRagCard').classList.toggle('active', mode==='ragpos');
+  document.getElementById('csPlaceActionGroup').style.display = mode==='place' ? 'block' : 'none';
+  document.getElementById('csIconGroup').style.display = mode==='ragpos' ? 'none' : 'block';
+
+  if(mode==='wipe'){
+    document.getElementById('csModeHint').textContent = '💡 Nhập nội quy (và ảnh vết bẩn nếu muốn), rồi bấm lên ảnh bên phải — mỗi lần bấm = 1 vết bẩn mới.';
+    document.getElementById('csClickHint').textContent = '👁 Mỗi lần bấm lên ảnh sẽ thêm 1 vết bẩn tại đúng điểm bấm.';
+    document.getElementById('csIconLabel').textContent = 'Ảnh vết bẩn — tùy chọn (để trống sẽ dùng hình vết bẩn mặc định)';
+    document.getElementById('csItemIcon').placeholder = 'Dán link ảnh vết bẩn (cà phê, dầu mỡ...) — để trống nếu dùng mặc định';
+  } else if(mode==='place'){
+    document.getElementById('csModeHint').textContent = '💡 Chọn hành vi bên dưới, nhập nội quy + icon vật thể, rồi bấm lên ảnh 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.';
+    document.getElementById('csClickHint').textContent = '👁 Bấm lần 1 = vị trí đồ đang để sai (màu đỏ). Bấm lần 2 = vị trí đúng quy định (màu xanh).';
+    document.getElementById('csIconLabel').textContent = 'Icon vật thể (emoji) hoặc link ảnh — tùy chọn';
+    document.getElementById('csItemIcon').placeholder = 'VD: 🗑️ hoặc link ảnh vật thể...';
+  } else if(mode==='ragpos'){
+    document.getElementById('csModeHint').textContent = '💡 Bấm 1 lần lên ảnh để đặt vị trí khăn lau sẽ nằm khi bắt đầu chơi (không cần nhập nội quy).';
+    document.getElementById('csClickHint').textContent = '👁 Bấm 1 lần lên ảnh để đặt vị trí gốc của khăn lau.';
+  }
   renderCsMarkers();
+}
+
+function setCsPlaceAction(action){
+  csPlaceAction = action;
+  document.getElementById('csPlaceKeepCard').classList.toggle('active', action==='keep');
+  document.getElementById('csPlaceRemoveCard').classList.toggle('active', action==='remove');
+}
+
+// ── QUẢN LÝ NHIỀU MÀN (MULTI-STAGE) ────────────────────────────
+function getCurrentStageDraft(){
+  return {
+    background: gdriveDirect(document.getElementById('csBgUrl').value.trim()),
+    ragImage: gdriveDirect(document.getElementById('csRagUrl').value.trim()) || '',
+    ragHomeX: csRagHome ? csRagHome.x : null,
+    ragHomeY: csRagHome ? csRagHome.y : null,
+    tasks: csTasks
+  };
+}
+
+function loadStageDraft(stage){
+  document.getElementById('csBgUrl').value = stage.background || '';
+  document.getElementById('csRagUrl').value = stage.ragImage || '';
+  csRagHome = (stage.ragHomeX!=null && stage.ragHomeY!=null) ? {x:stage.ragHomeX, y:stage.ragHomeY} : null;
+  csTasks = JSON.parse(JSON.stringify(stage.tasks || []));
+  csPendingFrom = null;
+  renderCsPreview();
+  renderCsList();
+}
+
+function addNewCsStage(){
+  const draft = getCurrentStageDraft();
+  if(!draft.background){ showToast('Màn hiện tại cần có ảnh nền trước khi thêm màn mới!','bad'); return; }
+  if(!draft.tasks.length){ showToast('Màn hiện tại cần ít nhất 1 nhiệm vụ trước khi thêm màn mới!','bad'); return; }
+
+  csStages[csCurrentStageIdx] = draft;
+  csCurrentStageIdx = csStages.length;
+
+  document.getElementById('csBgUrl').value='';
+  document.getElementById('csRagUrl').value='';
+  csRagHome = null;
+  csTasks = [];
+  csPendingFrom = null;
+
+  renderCsStageChips();
+  renderCsPreview();
+  renderCsList();
+  showToast(`✅ Đã lưu Màn ${csStages.length} — đang soạn Màn ${csCurrentStageIdx+1} mới`,'ok');
+}
+
+function switchToCsStage(idx){
+  // Lưu tạm màn đang soạn (nếu hợp lệ) trước khi chuyển
+  const draft = getCurrentStageDraft();
+  if(draft.background && draft.tasks.length){ csStages[csCurrentStageIdx] = draft; }
+
+  csCurrentStageIdx = idx;
+  if(csStages[idx]){
+    loadStageDraft(csStages[idx]);
+  } else {
+    document.getElementById('csBgUrl').value='';
+    document.getElementById('csRagUrl').value='';
+    csRagHome=null; csTasks=[]; csPendingFrom=null;
+    renderCsPreview(); renderCsList();
+  }
+  renderCsStageChips();
+}
+
+function removeCsStage(idx, ev){
+  ev.stopPropagation();
+  csStages.splice(idx,1);
+  if(csCurrentStageIdx > idx) csCurrentStageIdx--;
+  else if(csCurrentStageIdx === idx){
+    // Đang xoá đúng màn đang soạn → chuyển về màn trước đó hoặc màn trống mới
+    csCurrentStageIdx = Math.min(idx, csStages.length);
+    if(csStages[csCurrentStageIdx]) loadStageDraft(csStages[csCurrentStageIdx]);
+    else { document.getElementById('csBgUrl').value=''; document.getElementById('csRagUrl').value=''; csRagHome=null; csTasks=[]; renderCsPreview(); }
+  }
+  renderCsList();
+  renderCsStageChips();
+  showToast('🗑 Đã xoá màn','');
+}
+
+function renderCsStageChips(){
+  document.getElementById('csStageCount').textContent = csStages.length;
+  document.getElementById('csCurrentStageNum').textContent = csCurrentStageIdx + 1;
+  const holder = document.getElementById('csStageChips');
+  const totalSlots = Math.max(csStages.length, csCurrentStageIdx+1);
+  let html = '';
+  for(let i=0;i<totalSlots;i++){
+    const saved = csStages[i];
+    const isActive = i===csCurrentStageIdx;
+    const label = saved ? `Màn ${i+1} (${saved.tasks.length} NV)` : `Màn ${i+1} (đang soạn)`;
+    html += `<div onclick="switchToCsStage(${i})" style="display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${isActive?'var(--orange)':'var(--border)'};background:${isActive?'var(--ol)':'var(--bg)'};color:${isActive?'var(--orange)':'var(--text)'}">
+      <span>${label}</span>
+      ${saved?`<span onclick="removeCsStage(${i},event)" style="opacity:.6" title="Xoá màn">✕</span>`:''}
+    </div>`;
+  }
+  holder.innerHTML = html;
 }
 
 function renderCsPreview(){
@@ -846,12 +968,21 @@ function renderCsPreview(){
 function onCsPreviewClick(e){
   const img = document.getElementById('csBgImg');
   if(!img) return;
-  const noiquy = document.getElementById('csNoiquy').value.trim();
-  if(!noiquy){ showToast('Nhập nội quy trước khi đánh dấu vị trí!','bad'); return; }
   const rect = img.getBoundingClientRect();
   const x = (e.clientX-rect.left)/rect.width;
   const y = (e.clientY-rect.top)/rect.height;
   if(x<0||x>1||y<0||y>1) return;
+
+  // Chế độ đặt vị trí gốc khăn lau — không cần nội quy
+  if(csMode === 'ragpos'){
+    csRagHome = { x, y };
+    renderCsMarkers();
+    showToast('📍 Đã đặt vị trí gốc khăn lau!','ok');
+    return;
+  }
+
+  const noiquy = document.getElementById('csNoiquy').value.trim();
+  if(!noiquy){ showToast('Nhập nội quy trước khi đánh dấu vị trí!','bad'); return; }
   const sizePct = +document.getElementById('csSizePct').value || 9;
   const icon = document.getElementById('csItemIcon').value.trim();
 
@@ -878,7 +1009,8 @@ function onCsPreviewClick(e){
         toX: x, toY: y,
         sizePct, noiquy,
         icon: isImg ? '' : (iconDirect || '📦'),
-        image: isImg ? iconDirect : ''
+        image: isImg ? iconDirect : '',
+        placeAction: csPlaceAction   // MỚI: 'keep' hoặc 'remove'
       });
       csPendingFrom = null;
       document.getElementById('csNoiquy').value='';
@@ -905,6 +1037,9 @@ function renderCsMarkers(){
   if(csPendingFrom){
     html += `<div class="cs-marker from" style="left:${csPendingFrom.x*100}%;top:${csPendingFrom.y*100}%">•</div>`;
   }
+  if(csRagHome){
+    html += `<div class="cs-marker rag" style="left:${csRagHome.x*100}%;top:${csRagHome.y*100}%" title="Vị trí gốc khăn lau">🧻</div>`;
+  }
   holder.innerHTML = html;
 }
 
@@ -919,7 +1054,7 @@ function renderCsList(){
     <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
       <span style="font-size:16px">${t.image?`<img src="${escH(t.image)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;border-radius:4px">`:(t.kind==='wipe'?'🧽':(t.icon||'📦'))}</span>
       <div style="flex:1;font-size:12px">
-        <div style="font-weight:700">#${i+1} · ${t.kind==='wipe'?'Lau vết bẩn':'Đặt đồ đúng chỗ'}</div>
+        <div style="font-weight:700">#${i+1} · ${t.kind==='wipe'?'Lau vết bẩn':'Đặt đồ đúng chỗ'}${t.kind==='place'?` · ${t.placeAction==='remove'?'🗑️ biến mất':'📌 giữ nguyên'}`:''}</div>
         <div style="color:var(--t3)">${escH(t.noiquy).slice(0,60)}${t.noiquy.length>60?'…':''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
@@ -947,21 +1082,26 @@ function removeCsTask(i){
 async function publishCleanSpace(){
   const title = document.getElementById('csTitle').value.trim();
   const deadlineVal = document.getElementById('csDeadline').value;
-  const bg = gdriveDirect(document.getElementById('csBgUrl').value.trim());
   if(!title){ showToast('Vui lòng nhập tiêu đề!','bad'); return; }
   if(!deadlineVal){ showToast('Vui lòng chọn thời hạn!','bad'); return; }
-  if(!bg){ showToast('Vui lòng dán link ảnh nền!','bad'); return; }
-  if(csTasks.length < 1){ showToast('Cần đánh dấu ít nhất 1 nhiệm vụ!','bad'); return; }
+
+  // Tự động gộp màn đang soạn (nếu hợp lệ) vào danh sách trước khi publish
+  const draft = getCurrentStageDraft();
+  const stages = [...csStages];
+  if(draft.background && draft.tasks.length){
+    stages[csCurrentStageIdx] = draft;
+  }
+  const finalStages = stages.filter(s => s && s.background && s.tasks && s.tasks.length);
+
+  if(!finalStages.length){ showToast('Cần ít nhất 1 màn có ảnh nền + nhiệm vụ!','bad'); return; }
 
   const isEditing = csEditingId !== null;
-  const ragImage = gdriveDirect(document.getElementById('csRagUrl').value.trim());
+  const totalTasks = finalStages.reduce((sum,s)=>sum+s.tasks.length, 0);
   const ch = {
     id: isEditing ? csEditingId : nextId++,
     type: 'clean-space',
     title, description: document.getElementById('csDesc').value.trim(),
-    background: bg,
-    ragImage: ragImage || '',
-    tasks: csTasks,
+    stages: finalStages,
     deadline: new Date(deadlineVal).toISOString(),
     status: 'active',
     createdAt: new Date().toISOString()
@@ -989,8 +1129,8 @@ async function publishCleanSpace(){
   document.getElementById('csShareCard').style.display='block';
   document.getElementById('csShareUrl').textContent = link;
   showToast(isEditing
-    ? `✅ Đã cập nhật ván #${ch.id} — ${csTasks.length} nhiệm vụ!`
-    : `🚀 Dọn Dẹp Không Gian #${ch.id} đã publish với ${csTasks.length} nhiệm vụ!`, 'ok');
+    ? `✅ Đã cập nhật ván #${ch.id} — ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`
+    : `🚀 Dọn Dẹp Không Gian #${ch.id} đã publish với ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`, 'ok');
 
   resetCsForm();
   if(isEditing) loadManage();
@@ -1003,12 +1143,17 @@ function resetCsForm(){
   document.getElementById('csRagUrl').value='';
   document.getElementById('csNoiquy').value='';
   document.getElementById('csItemIcon').value='';
+  csStages = [];
+  csCurrentStageIdx = 0;
   csTasks = [];
   csPendingFrom = null;
   csEditingId = null;
+  csRagHome = null;
+  setCsPlaceAction('keep');
   document.getElementById('csPublishBtn').textContent = '🚀 Publish';
   document.getElementById('csCancelEditBtn').style.display = 'none';
   document.querySelector('#page-clean .page-hdr h2').textContent = '🧹 Tạo Game Dọn Dẹp Không Gian';
+  renderCsStageChips();
   renderCsPreview();
   renderCsList();
 }
@@ -1021,24 +1166,33 @@ function editCleanSpace(id){
   csEditingId = ch.id;
   document.getElementById('csTitle').value = ch.title || '';
   document.getElementById('csDesc').value = ch.description || '';
-  document.getElementById('csBgUrl').value = ch.background || '';
-  document.getElementById('csRagUrl').value = ch.ragImage || '';
 
   const d = new Date(ch.deadline);
   const pad = n=>String(n).padStart(2,'0');
   document.getElementById('csDeadline').value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-  csTasks = JSON.parse(JSON.stringify(ch.tasks || []));
-  csPendingFrom = null;
+  // Tương thích ngược: ván cũ chỉ có 1 màn phẳng (background/tasks ở gốc), ván mới có mảng stages
+  if(ch.stages && ch.stages.length){
+    csStages = JSON.parse(JSON.stringify(ch.stages));
+  } else {
+    csStages = [{
+      background: ch.background || '',
+      ragImage: ch.ragImage || '',
+      ragHomeX: ch.ragHomeX ?? null,
+      ragHomeY: ch.ragHomeY ?? null,
+      tasks: ch.tasks || []
+    }];
+  }
+  csCurrentStageIdx = 0;
+  loadStageDraft(csStages[0]);
 
   document.getElementById('csPublishBtn').textContent = '✅ Cập nhật ván #' + ch.id;
   document.getElementById('csCancelEditBtn').style.display = 'inline-flex';
   document.querySelector('#page-clean .page-hdr h2').textContent = `✏️ Đang sửa ván #${ch.id}`;
 
   switchPage('clean', [...document.querySelectorAll('.nav-item')].find(n=>n.getAttribute('onclick')?.includes("switchPage('clean'")));
-  renderCsPreview();
-  renderCsList();
-  showToast(`✏️ Đang sửa "${ch.title}" — chỉnh xong bấm "Cập nhật"`,'');
+  renderCsStageChips();
+  showToast(`✏️ Đang sửa "${ch.title}" (${csStages.length} màn) — chỉnh xong bấm "Cập nhật"`,'');
 }
 
 function cancelCsEdit(){
@@ -1387,7 +1541,7 @@ function loadManage(){
             ${ch.type==='sudoku'?`<span class="act-tag">${diffN[ch.difficulty]||ch.difficulty}</span>`:''}
             ${ch.type==='spot-difference'?`<span class="act-tag">⏱ ${Math.floor((ch.timeLimit||180)/60)}:${String((ch.timeLimit||180)%60).padStart(2,'0')}</span>`:''}
             ${ch.type==='memory-match'?`<span class="act-tag">🎴 ${ch.cards?.length||0} cặp</span>`:''}
-                ${ch.type==='clean-space'?`<span class="act-tag">🧹 ${ch.tasks?.length||0} nhiệm vụ</span>`:''}
+                ${ch.type==='clean-space'?`<span class="act-tag">🧹 ${ch.stages?.length||1} màn · ${ch.stages?ch.stages.reduce((s,st)=>s+(st.tasks?.length||0),0):(ch.tasks?.length||0)} nhiệm vụ</span>`:''}
           </div>
         </div>
         <div class="active-ch-actions">

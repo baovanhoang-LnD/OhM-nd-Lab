@@ -124,26 +124,43 @@
   // ── CẤU HÌNH ────────────────────────────────────────────────
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby2iK5X78FucVv36FcgyKPJiEopb9gdQMpD6V11QWAnMYpNo09yetHe11V3TtNjvbwG/exec';
   const _key = 'BTK2026';
+  const GAME_VIS_CACHE_KEY = 'bb_game_settings_cache';
+
+  // ── ÁP DỤNG NGAY TỪ CACHE (đồng bộ, không chờ mạng) ───────────
+  // Chạy ngay khi trình duyệt đọc tới đây — tránh hiệu ứng "hiện thẻ rồi biến mất"
+  // vì không phải chờ gọi Apps Script (vốn có độ trễ vài giây) mới biết game nào cần ẩn.
+  (function applyCachedGameVisibility(){
+    try{
+      const raw = localStorage.getItem(GAME_VIS_CACHE_KEY);
+      if(!raw) return;
+      const { settings } = JSON.parse(raw);
+      document.querySelectorAll('.game-card[data-game-type]').forEach(card => {
+        const type = card.dataset.gameType;
+        if(settings[type] === false){ card.style.display = 'none'; }
+      });
+    }catch(e){ /* cache lỗi/không có — bỏ qua, đợi bản làm mới từ server */ }
+  })();
 
   window.onload = () => {
     const name = localStorage.getItem('bb_name');
     const dept = localStorage.getItem('bb_dept');
     if(name) showProfile(name, dept);
-    applyGameVisibility();
+    refreshGameVisibility();
   };
 
-  // ── ẨN/HIỆN THẺ GAME THEO CÔNG TẮC ADMIN ──────────────────────
-  async function applyGameVisibility(){
+  // ── LÀM MỚI NGẦM TỪ SERVER + CẬP NHẬT CACHE CHO LẦN SAU ───────
+  async function refreshGameVisibility(){
     try{
       const res = await fetch(`${SCRIPT_URL}?action=getGameSettings&key=${_key}&_=${Date.now()}`);
       const data = await res.json();
       const settings = data.settings || {};
       document.querySelectorAll('.game-card[data-game-type]').forEach(card => {
         const type = card.dataset.gameType;
-        if(settings[type] === false){ card.style.display = 'none'; }
+        card.style.display = settings[type] === false ? 'none' : '';
       });
+      localStorage.setItem(GAME_VIS_CACHE_KEY, JSON.stringify({ settings, ts: Date.now() }));
     }catch(e){
-      console.error('Không tải được cấu hình hiển thị game, giữ nguyên mặc định:', e);
+      console.error('Không tải được cấu hình hiển thị game, giữ nguyên trạng thái hiện tại:', e);
     }
   }
   

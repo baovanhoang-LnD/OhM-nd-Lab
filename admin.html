@@ -461,6 +461,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       <div class="page-hdr">
         <h2>🧹 Tạo Game Dọn Dẹp Không Gian</h2>
         <p>Dán ảnh không gian bừa bộn, đánh dấu từng nhiệm vụ (lau vết bẩn / đặt đồ đúng chỗ) ngay trên ảnh</p>
+        <p style="font-size:12px;color:var(--t3);margin-top:4px">💡 Quy trình đưa ảnh lên GitHub: mở repo trên GitHub → vào thư mục <code>assets/clean-space/</code> (tạo mới nếu chưa có) → "Add file" → "Upload files" → kéo ảnh vào → Commit. Link dùng được có dạng <code>https://tenuser.github.io/tenrepo/assets/clean-space/ten-anh.jpg</code>.</p>
       </div>
       <div class="row">
         <div class="col">
@@ -483,7 +484,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="tip tip-blue" style="margin-bottom:10px">📌 Dùng cho nhiệm vụ "vứt rác" ở BẤT KỲ màn nào — 1 icon cố định trên màn hình xuyên suốt cả ván, không cần xuất hiện trong từng ảnh nền.</div>
             <div class="form-group">
               <label class="form-label">Ảnh thùng rác — tùy chọn (để trống dùng icon mặc định 🗑️)</label>
-              <input type="text" id="csTrashUrl" placeholder="Dán link ảnh thùng rác (Google Drive/Imgur...)...">
+              <input type="text" id="csTrashUrl" placeholder="Dán link ảnh từ GitHub Pages (VD: .../assets/thung-rac.png)...">
             </div>
             <div id="csTrashPosInfo" style="font-size:12px;color:var(--t3);margin-bottom:4px">Chưa đặt vị trí — chọn "📍 Vị trí thùng rác" bên dưới rồi bấm lên ảnh.</div>
             <hr class="dv">
@@ -493,17 +494,17 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <button class="btn btn-secondary btn-sm" onclick="addNewCsStage()" style="margin-bottom:4px">➕ Lưu màn này & Thêm màn mới</button>
             <hr class="dv">
             <div class="card-label" id="csStepBgLabel">Ảnh không gian — Màn <span id="csCurrentStageNum">1</span></div>
-            <div class="tip tip-blue" style="margin-bottom:10px">📌 Dùng ảnh chụp/vẽ không gian đang bừa bộn (bếp chung, phòng họp...). Google Drive: Share → Anyone with link → dán vào đây.</div>
+            <div class="tip tip-blue" style="margin-bottom:10px">📌 <strong>Khuyến nghị dùng ảnh lưu trong repo GitHub (GitHub Pages)</strong> để có chất lượng ảnh nét nhất — Google Drive cho ảnh mờ hơn do bị nén phía Google. Đưa ảnh vào thư mục repo (VD: <code>assets/clean-space/</code>) rồi dán link dạng <code>https://tenuser.github.io/tenrepo/assets/clean-space/ten-anh.jpg</code>.</div>
             <div class="form-group">
-              <input type="text" id="csBgUrl" placeholder="Dán link ảnh nền..." oninput="renderCsPreview()">
+              <input type="text" id="csBgUrl" placeholder="Dán link ảnh nền từ GitHub Pages..." oninput="renderCsPreview()">
             </div>
             <div class="form-group">
               <label class="form-label">Ảnh khăn lau — tùy chọn (để trống dùng hình khăn mặc định)</label>
-              <input type="text" id="csRagUrl" placeholder="Dán link ảnh khăn lau (Google Drive/Imgur...)...">
+              <input type="text" id="csRagUrl" placeholder="Dán link ảnh khăn lau từ GitHub Pages...">
             </div>
             <div class="form-group">
               <label class="form-label">Ảnh lớp phủ trước — tùy chọn (che vật thể, VD: viền bàn)</label>
-              <input type="text" id="csFrontUrl" placeholder="Dán link ảnh PNG nền trong suốt, chỉ chứa phần cần che phía trước..." oninput="renderCsPreview()">
+              <input type="text" id="csFrontUrl" placeholder="Dán link ảnh PNG nền trong suốt từ GitHub Pages..." oninput="renderCsPreview()">
               <div class="tip" style="margin-top:8px">📌 Dùng ảnh PNG nền trong suốt, kích thước khớp với ảnh nền — chỉ vẽ phần vật thể cần "che" (VD: mép bàn) để nó luôn nổi trên vật thể kéo-thả (VD: ghế).</div>
             </div>
             <hr class="dv">
@@ -537,7 +538,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="form-group" id="csIconGroup">
               <label class="form-label" id="csIconLabel">Icon vật thể (emoji) hoặc link ảnh — tùy chọn</label>
               <input type="text" id="csItemIcon" placeholder="VD: 🗑️ hoặc link ảnh vật thể...">
-              <div class="tip tip-blue" style="margin-top:8px">📌 <strong>Google Drive:</strong> dán nguyên link share (Anyone with link) — hệ thống tự chuyển sang link ảnh trực tiếp, không cần chỉnh gì thêm.</div>
+              <div class="tip tip-blue" style="margin-top:8px">📌 Nên dùng link ảnh từ GitHub Pages để có chất lượng nét nhất. Vẫn dán được link Google Drive (Share → Anyone with link) nhưng ảnh có thể bị mờ do Google tự nén.</div>
             </div>
             <div style="display:flex;gap:8px">
               <div class="form-group" style="flex:1">

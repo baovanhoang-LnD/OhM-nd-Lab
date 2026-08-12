@@ -626,9 +626,10 @@ function itemEnd(cx,cy){
 
     if(activeTask.placeAction === 'remove'){
       // Biến mất — dành cho vứt rác, dọn đồ thừa
-      activeItem.classList.add('placed');
+      const itemEl = activeItem; // chụp lại tham chiếu DOM cục bộ — activeItem sẽ bị gán null trước khi setTimeout chạy
+      itemEl.classList.add('placed');
       spawnSparkle({getBoundingClientRect:()=>({left:snapX+sr.left,top:snapY+sr.top,width:iw,height:ih})});
-      setTimeout(()=>{ activeItem.style.transition='opacity .3s ease, transform .3s ease'; activeItem.style.opacity='0'; activeItem.style.transform='scale(.4)'; }, 80);
+      setTimeout(()=>{ itemEl.style.transition='opacity .3s ease, transform .3s ease'; itemEl.style.opacity='0'; itemEl.style.transform='scale(.4)'; }, 80);
     } else {
       // Giữ nguyên tại chỗ — dành cho cất đồ, kéo ghế...
       activeItem.classList.add('placed');

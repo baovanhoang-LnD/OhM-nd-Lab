@@ -893,11 +893,12 @@ function setCsMode(mode){
   renderCsMarkers();
 }
 
-// Chỉ hiện ô chọn layer khi đang ở chế độ "place" VÀ màn hiện tại có khai báo lớp phủ trước
+// Chỉ hiện ô chọn layer khi đang ở chế độ "wipe" hoặc "place" VÀ màn hiện tại có khai báo lớp phủ trước
 // (không có lớp phủ thì lựa chọn trước/sau vô nghĩa, ẩn đi cho gọn giao diện)
 function updateCsLayerGroupVisibility(){
   const hasFront = document.getElementById('csFrontUrl').value.trim().length > 0;
-  document.getElementById('csLayerGroup').style.display = (csMode==='place' && hasFront) ? 'block' : 'none';
+  const relevantMode = (csMode==='wipe' || csMode==='place');
+  document.getElementById('csLayerGroup').style.display = (relevantMode && hasFront) ? 'block' : 'none';
 }
 
 function setCsItemLayer(layer){
@@ -1075,7 +1076,7 @@ function onCsPreviewClick(e){
   if(csMode === 'wipe'){
     const wipeIsImg = /^https?:\/\//.test(icon);
     const wipeImage = wipeIsImg ? gdriveDirect(icon) : '';
-    csTasks.push({ kind:'wipe', x, y, sizePct, noiquy, image: wipeImage });
+    csTasks.push({ kind:'wipe', x, y, sizePct, noiquy, image: wipeImage, frontOfOverlay: csItemLayer !== 'behind' });
     document.getElementById('csNoiquy').value='';
     document.getElementById('csItemIcon').value='';
     renderCsMarkers();
@@ -1174,8 +1175,8 @@ function renderCsList(){
     let subLabel = '';
     if(t.kind==='place'){
       subLabel = t.targetType==='trash' ? ' · 🗑️ vào thùng rác chung' : ` · ${t.placeAction==='remove'?'🗑️ biến mất':'📌 giữ nguyên'}`;
-      if(t.frontOfOverlay === false) subLabel += ' · 🔙 sau lớp phủ';
     }
+    if(t.frontOfOverlay === false) subLabel += ' · 🔙 sau lớp phủ';
     return `
     <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
       <span style="font-size:16px">${t.image?`<img src="${escH(t.image)}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;border-radius:4px">`:(t.kind==='wipe'?'🧽':(t.icon||'📦'))}</span>

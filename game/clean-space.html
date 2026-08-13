@@ -38,17 +38,19 @@
 .cs-stain.cleaned{ opacity:0; transform: scale(0.3); pointer-events:none; }
 
 .cs-item{
-  position:absolute; cursor:grab; z-index:15; touch-action:none;
+  position:absolute; cursor:grab; touch-action:none;
   filter: drop-shadow(0 4px 6px rgba(0,0,0,.18));
   display:flex; align-items:center; justify-content:center;
   font-size: 28px; line-height:1;
+  /* z-index được gán riêng qua JS cho từng vật thể (trước/sau lớp phủ) — xem CS_Z trong script */
 }
 .cs-item img{ width:100%; height:100%; object-fit:contain; pointer-events:none; }
-.cs-item.dragging{ cursor:grabbing; z-index:30; }
-.cs-item.placed{ pointer-events:none; cursor:default; z-index:12; }
+.cs-item.dragging{ cursor:grabbing; }
+.cs-item.placed{ pointer-events:none; cursor:default; }
 
 .cs-zone{
-  position:absolute; opacity:0;
+  position:absolute; border:2px dashed var(--orange); border-radius:8px;
+  opacity:.55;
 }
 
 .placed-badge{
@@ -64,7 +66,7 @@
   cursor:grab; z-index:20; touch-action:none;
   filter: drop-shadow(0 6px 8px rgba(0,0,0,.18));
 }
-.cs-rag.dragging{ cursor:grabbing; z-index: 35; }
+.cs-rag.dragging{ cursor:grabbing; }
 .cs-rag svg{ width:100%; height:100%; }
 
 .cs-trash-bin{
@@ -199,6 +201,19 @@
 // ── CONFIG ──────────────────────────────────────────────────
 const _cfg = 'https://script.google.com/macros/s/AKfycby2iK5X78FucVv36FcgyKPJiEopb9gdQMpD6V11QWAnMYpNo09yetHe11V3TtNjvbwG/exec';
 const _key = 'BTK2026';
+
+// ── LỚP HIỂN THỊ (Z-INDEX) ─────────────────────────────────────
+// Vật thể "Sau lớp phủ" (VD: ghế bị bàn che) < Lớp phủ trước < Vật thể "Trước lớp phủ" (mặc định)
+// < Thùng rác < Khăn lau. Khi đang kéo, vật thể tạm nổi lên trên lớp phủ để dễ nhìn thấy.
+const CS_Z = {
+  ITEM_BEHIND: 5,
+  FRONT_OVERLAY: 8,
+  ITEM_FRONT: 10,
+  TRASH_BIN: 14,
+  ITEM_DRAGGING: 22,
+  RAG: 20,
+  RAG_DRAGGING: 35
+};
 
 // ── STATE ───────────────────────────────────────────────────
 let playerName = localStorage.getItem('bb_name') || '';
@@ -408,6 +423,7 @@ function buildTasks(){
   if(hasTrashTask){
     trashEl = document.createElement('div');
     trashEl.className = 'cs-trash-bin'; trashEl.id = 'csTrashBin';
+    trashEl.style.zIndex = CS_Z.TRASH_BIN;
     trashEl.innerHTML = G.ch.trashImage
       ? `<img src="${escH(G.ch.trashImage)}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none" draggable="false">`
       : `<div class="cs-trash-default">🗑️</div>`;
@@ -463,6 +479,9 @@ function buildTasks(){
       item.style.width = sizePct + '%';
       item.style.aspectRatio = '1';
       item.style.transform = 'translate(-50%,-50%)';
+      // Mặc định (t.frontOfOverlay không có hoặc true) = trước lớp phủ, giữ hành vi cũ tương thích ngược
+      item.dataset.restZ = (t.frontOfOverlay === false) ? CS_Z.ITEM_BEHIND : CS_Z.ITEM_FRONT;
+      item.style.zIndex = item.dataset.restZ;
       item.innerHTML = t.image ? `<img src="${escH(t.image)}" draggable="false">` : (t.icon || '📦');
       layer.appendChild(item);
       G.itemEls.push(item);
@@ -478,13 +497,14 @@ function buildTasks(){
     front.id = 'csFrontOverlay';
     front.src = G.stage.frontOverlay;
     front.draggable = false;
-    front.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;z-index:8';
+    front.style.cssText = `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none;z-index:${CS_Z.FRONT_OVERLAY}`;
     stage.appendChild(front);
   }
 
   if(hasWipe){
     const rag = document.createElement('div');
     rag.className = 'cs-rag'; rag.id = 'csRag';
+    rag.style.zIndex = CS_Z.RAG;
     rag.innerHTML = G.stage.ragImage
       ? `<img src="${escH(G.stage.ragImage)}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none" draggable="false">`
       : `<svg viewBox="0 0 100 70">
@@ -592,6 +612,7 @@ function itemStart(item, zone, task, cx, cy){
   ensureTimerStarted();
   activeItem=item; activeZone=zone; activeTask=task;
   item.classList.add('dragging');
+  item.style.zIndex = CS_Z.ITEM_DRAGGING; // nổi tạm lên trên lớp phủ trong lúc kéo, dù nghỉ ở lớp nào
   itemHome = { left:item.style.left, top:item.style.top, transform:item.style.transform };
   const r=item.getBoundingClientRect();
   itemOffX=cx-r.left; itemOffY=cy-r.top;
@@ -611,6 +632,7 @@ function itemMove(cx,cy){
 function itemEnd(cx,cy){
   if(!activeItem) return;
   activeItem.classList.remove('dragging');
+  const restZ = activeItem.dataset.restZ || CS_Z.ITEM_FRONT; // khôi phục đúng lớp nghỉ (trước/sau lớp phủ)
   const zr=activeZone.getBoundingClientRect();
   const hit = cx>zr.left-10 && cx<zr.right+10 && cy>zr.top-10 && cy<zr.bottom+10;
   activeZone.style.opacity=''; activeZone.style.borderColor='';
@@ -622,6 +644,7 @@ function itemEnd(cx,cy){
     const snapX = zr.left - sr.left + (zr.width-iw)/2;
     const snapY = zr.top - sr.top + (zr.height-ih)/2;
     activeItem.style.left=snapX+'px'; activeItem.style.top=snapY+'px';
+    activeItem.style.zIndex = restZ;
 
     if(activeTask.placeAction === 'remove'){
       // Biến mất — dành cho vứt rác, dọn đồ thừa
@@ -640,6 +663,7 @@ function itemEnd(cx,cy){
     markTaskDone();
   } else {
     activeItem.style.left=itemHome.left; activeItem.style.top=itemHome.top; activeItem.style.transform=itemHome.transform;
+    activeItem.style.zIndex = restZ;
     G.misses++;
   }
   activeItem=null; activeZone=null; activeTask=null;

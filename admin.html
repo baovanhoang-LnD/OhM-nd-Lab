@@ -184,7 +184,6 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
     <div id="page-sudoku" class="page active">
       <div class="page-hdr">
         <h2>🔢 Tạo Sudoku Challenge</h2>
-        <p>Có thể publish nhiều ván cùng lúc — mỗi ván có leaderboard riêng</p>
       </div>
       <div class="row">
         <div class="col">
@@ -192,11 +191,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="cTitle" placeholder="VD: Sudoku Tuần 1 — Phòng Marketing">
+              <input type="text" id="cTitle">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <textarea id="cDesc" placeholder="Ghi chú thêm cho người chơi..."></textarea>
+              <textarea id="cDesc"></textarea>
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -217,7 +216,6 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
                 <button class="btn btn-secondary btn-sm" onclick="randomSeed()">🎲 Random</button>
               </div>
             </div>
-            <div class="tip">💡 Mỗi seed = 1 câu đố cố định. Tất cả người chơi cùng seed → cùng câu đố.</div>
             <hr class="dv">
             <div style="display:flex;gap:8px">
               <button class="btn btn-secondary" onclick="previewChallenge()" style="flex:1;justify-content:center">👁 Xem trước</button>
@@ -255,11 +253,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="spTitle" placeholder="VD: Tìm điểm khác — Văn phòng mới">
+              <input type="text" id="spTitle">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="spDesc" placeholder="Gợi ý hoặc chú thích...">
+              <input type="text" id="spDesc">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -276,12 +274,12 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Link ảnh</div>
             <div class="form-group">
               <label class="form-label">Link ảnh gốc (trái)</label>
-              <input type="text" id="spImg1" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
+              <input type="text" id="spImg1">
               <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(1)" style="margin-top:6px">👁 Xem trước ảnh trái</button>
             </div>
             <div class="form-group">
               <label class="form-label">Link ảnh đã chỉnh (phải)</label>
-              <input type="text" id="spImg2" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
+              <input type="text" id="spImg2">
               <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(2)" style="margin-top:6px">👁 Xem trước ảnh phải</button>
             </div>
             <div class="tip">💡 Sau khi xem trước, click vào <strong>ảnh phải</strong> để đánh dấu 10 điểm khác biệt.</div>
@@ -344,11 +342,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="mmTitle" placeholder="VD: Lật thẻ — Sản phẩm mới Q3">
+              <input type="text" id="mmTitle">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="mmDesc" placeholder="Gợi ý hoặc chú thích...">
+              <input type="text" id="mmDesc">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -396,11 +394,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="stkTitle" placeholder="VD: Sticker Puzzle — Team Building 2026">
+              <input type="text" id="stkTitle">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="stkDesc" placeholder="Gợi ý hoặc chú thích...">
+              <input type="text" id="stkDesc">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -410,14 +408,14 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Bước 1 — Ảnh nền</div>
             <div class="tip tip-blue" style="margin-bottom:10px">📌 Ảnh nền cần có sẵn các mảng trống hình bóng trắng do bạn thiết kế trước (Photoshop/Figma...).</div>
             <div class="form-group">
-              <input type="text" id="stkBgUrl" placeholder="Dán link ảnh nền..." oninput="renderStkPreview()">
+              <input type="text" id="stkBgUrl">
             </div>
             <hr class="dv">
             <div class="card-label">Bước 2 — Thêm từng sticker</div>
             <div class="tip" style="margin-bottom:10px">💡 Dán link 1 sticker → nhập kích thước ước lượng → <strong>bấm vào đúng vị trí trên ảnh nền bên phải</strong> để đánh dấu. Lặp lại cho từng sticker.</div>
             <div class="form-group">
               <label class="form-label">Link sticker hiện tại</label>
-              <input type="text" id="stkPieceUrl" placeholder="Dán link ảnh sticker...">
+              <input type="text" id="stkPieceUrl">
             </div>
             <div style="display:flex;gap:8px">
               <div class="form-group" style="flex:1">
@@ -469,11 +467,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="csTitle" placeholder="VD: Dọn Sạch Bếp Chung — Tuần 1">
+              <input type="text" id="csTitle">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="csDesc" placeholder="Gợi ý hoặc chú thích...">
+              <input type="text" id="csDesc">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -484,7 +482,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="tip tip-blue" style="margin-bottom:10px">📌 Dùng cho nhiệm vụ "vứt rác" ở BẤT KỲ màn nào — 1 icon cố định trên màn hình xuyên suốt cả ván, không cần xuất hiện trong từng ảnh nền.</div>
             <div class="form-group">
               <label class="form-label">Ảnh thùng rác — tùy chọn (để trống dùng icon mặc định 🗑️)</label>
-              <input type="text" id="csTrashUrl" placeholder="Dán link ảnh từ GitHub Pages (VD: .../assets/thung-rac.png)...">
+              <input type="text" id="csTrashUrl">
             </div>
             <div id="csTrashPosInfo" style="font-size:12px;color:var(--t3);margin-bottom:4px">Chưa đặt vị trí — chọn "📍 Vị trí thùng rác" bên dưới rồi bấm lên ảnh.</div>
             <hr class="dv">
@@ -496,15 +494,15 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label" id="csStepBgLabel">Ảnh không gian — Màn <span id="csCurrentStageNum">1</span></div>
             <div class="tip tip-blue" style="margin-bottom:10px">📌 <strong>Khuyến nghị dùng ảnh lưu trong repo GitHub (GitHub Pages)</strong> để có chất lượng ảnh nét nhất — Google Drive cho ảnh mờ hơn do bị nén phía Google. Đưa ảnh vào thư mục repo (VD: <code>assets/clean-space/</code>) rồi dán link dạng <code>https://tenuser.github.io/tenrepo/assets/clean-space/ten-anh.jpg</code>.</div>
             <div class="form-group">
-              <input type="text" id="csBgUrl" placeholder="Dán link ảnh nền từ GitHub Pages..." oninput="renderCsPreview()">
+              <input type="text" id="csBgUrl">
             </div>
             <div class="form-group">
               <label class="form-label">Ảnh khăn lau — tùy chọn (để trống dùng hình khăn mặc định)</label>
-              <input type="text" id="csRagUrl" placeholder="Dán link ảnh khăn lau từ GitHub Pages...">
+              <input type="text" id="csRagUrl">
             </div>
             <div class="form-group">
               <label class="form-label">Ảnh lớp phủ trước — tùy chọn (che vật thể, VD: viền bàn)</label>
-              <input type="text" id="csFrontUrl" placeholder="Dán link ảnh PNG nền trong suốt từ GitHub Pages..." oninput="renderCsPreview(); updateCsLayerGroupVisibility();">
+              <input type="text" id="csFrontUrl" oninput="renderCsPreview(); updateCsLayerGroupVisibility();">
               <div class="tip" style="margin-top:8px">📌 Dùng ảnh PNG nền trong suốt, kích thước khớp với ảnh nền — chỉ vẽ phần vật thể cần "che" (VD: mép bàn) để nó luôn nổi trên vật thể kéo-thả (VD: ghế).</div>
             </div>
             <hr class="dv">
@@ -544,7 +542,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             </div>
             <div class="form-group" id="csIconGroup">
               <label class="form-label" id="csIconLabel">Icon vật thể (emoji) hoặc link ảnh — tùy chọn</label>
-              <input type="text" id="csItemIcon" placeholder="VD: 🗑️ hoặc link ảnh vật thể...">
+              <input type="text" id="csItemIcon">
               <div class="tip tip-blue" style="margin-top:8px">📌 Nên dùng link ảnh từ GitHub Pages để có chất lượng nét nhất. Vẫn dán được link Google Drive (Share → Anyone with link) nhưng ảnh có thể bị mờ do Google tự nén.</div>
             </div>
             <div style="display:flex;gap:8px">
@@ -555,7 +553,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             </div>
             <div class="form-group">
               <label class="form-label">Nội quy hiện ra khi hoàn thành nhiệm vụ này</label>
-              <textarea id="csNoiquy" placeholder="VD: Luôn lau bàn sau khi ăn uống ở khu vực bếp chung nhé!"></textarea>
+              <textarea id="csNoiquy"></textarea>
             </div>
             <hr class="dv">
             <div class="card-label">Nhiệm vụ của màn này (<span id="csCount">0</span>)</div>
@@ -590,7 +588,6 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
     <div id="page-visibility" class="page">
       <div class="page-hdr">
         <h2>👁️ Hiển Thị Game</h2>
-        <p>Bật/tắt game nào sẽ hiện trên trang chủ (index.html) — không ảnh hưởng các ván đang active</p>
       </div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">

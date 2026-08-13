@@ -504,7 +504,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             </div>
             <div class="form-group">
               <label class="form-label">Ảnh lớp phủ trước — tùy chọn (che vật thể, VD: viền bàn)</label>
-              <input type="text" id="csFrontUrl" placeholder="Dán link ảnh PNG nền trong suốt từ GitHub Pages..." oninput="renderCsPreview()">
+              <input type="text" id="csFrontUrl" placeholder="Dán link ảnh PNG nền trong suốt từ GitHub Pages..." oninput="renderCsPreview(); updateCsLayerGroupVisibility();">
               <div class="tip" style="margin-top:8px">📌 Dùng ảnh PNG nền trong suốt, kích thước khớp với ảnh nền — chỉ vẽ phần vật thể cần "che" (VD: mép bàn) để nó luôn nổi trên vật thể kéo-thả (VD: ghế).</div>
             </div>
             <hr class="dv">
@@ -533,6 +533,13 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               <div class="diff-grid" style="grid-template-columns:repeat(2,1fr)">
                 <div class="diff-card active" id="csPlaceKeepCard" onclick="setCsPlaceAction('keep')"><div class="di">📌</div><div class="dl">Giữ nguyên tại chỗ</div><div class="ds">VD: cất chén, kéo ghế</div></div>
                 <div class="diff-card" id="csPlaceRemoveCard" onclick="setCsPlaceAction('remove')"><div class="di">🗑️</div><div class="dl">Biến mất</div><div class="ds">VD: vứt rác, dọn đồ thừa</div></div>
+              </div>
+            </div>
+            <div class="form-group" id="csLayerGroup" style="display:none">
+              <label class="form-label">Vị trí so với lớp phủ trước</label>
+              <div class="diff-grid" style="grid-template-columns:repeat(2,1fr)">
+                <div class="diff-card active" id="csLayerFrontCard" onclick="setCsItemLayer('front')"><div class="di">🔝</div><div class="dl">Trước lớp phủ</div><div class="ds">Mặc định — vật nổi trên</div></div>
+                <div class="diff-card" id="csLayerBehindCard" onclick="setCsItemLayer('behind')"><div class="di">🔙</div><div class="dl">Sau lớp phủ</div><div class="ds">VD: ghế bị bàn che</div></div>
               </div>
             </div>
             <div class="form-group" id="csIconGroup">
@@ -853,6 +860,7 @@ let csStages = [];           // MỚI: danh sách các màn ĐÃ LƯU: [{backgro
 let csCurrentStageIdx = 0;   // MỚI: đang soạn màn thứ mấy (0-indexed) — chưa nằm trong csStages cho tới khi lưu
 let csPlaceTarget = 'zone';  // MỚI: 'zone' (đích trên ảnh, 2 click) hoặc 'trash' (thùng rác chung, 1 click)
 let csTrashHome = null;      // MỚI: {x,y} vị trí thùng rác — CẤP VÁN (không theo từng màn)
+let csItemLayer = 'front';   // MỚI: 'front' (trước lớp phủ, mặc định) hoặc 'behind' (sau lớp phủ)
 
 function setCsMode(mode){
   csMode = mode;
@@ -864,6 +872,7 @@ function setCsMode(mode){
   document.getElementById('csPlaceTargetGroup').style.display = mode==='place' ? 'block' : 'none';
   document.getElementById('csPlaceActionGroup').style.display = (mode==='place' && csPlaceTarget==='zone') ? 'block' : 'none';
   document.getElementById('csIconGroup').style.display = (mode==='ragpos' || mode==='trashpos') ? 'none' : 'block';
+  updateCsLayerGroupVisibility();
 
   if(mode==='wipe'){
     document.getElementById('csModeHint').textContent = '💡 Nhập nội quy (và ảnh vết bẩn nếu muốn), rồi bấm lên ảnh bên phải — mỗi lần bấm = 1 vết bẩn mới.';
@@ -882,6 +891,19 @@ function setCsMode(mode){
     document.getElementById('csClickHint').textContent = '👁 Bấm 1 lần lên ảnh để đặt vị trí thùng rác.';
   }
   renderCsMarkers();
+}
+
+// Chỉ hiện ô chọn layer khi đang ở chế độ "place" VÀ màn hiện tại có khai báo lớp phủ trước
+// (không có lớp phủ thì lựa chọn trước/sau vô nghĩa, ẩn đi cho gọn giao diện)
+function updateCsLayerGroupVisibility(){
+  const hasFront = document.getElementById('csFrontUrl').value.trim().length > 0;
+  document.getElementById('csLayerGroup').style.display = (csMode==='place' && hasFront) ? 'block' : 'none';
+}
+
+function setCsItemLayer(layer){
+  csItemLayer = layer;
+  document.getElementById('csLayerFrontCard').classList.toggle('active', layer==='front');
+  document.getElementById('csLayerBehindCard').classList.toggle('active', layer==='behind');
 }
 
 function setCsPlaceTarget(target){
@@ -928,6 +950,7 @@ function loadStageDraft(stage){
   csRagHome = (stage.ragHomeX!=null && stage.ragHomeY!=null) ? {x:stage.ragHomeX, y:stage.ragHomeY} : null;
   csTasks = JSON.parse(JSON.stringify(stage.tasks || []));
   csPendingFrom = null;
+  updateCsLayerGroupVisibility();
   renderCsPreview();
   renderCsList();
 }
@@ -1069,7 +1092,8 @@ function onCsPreviewClick(e){
       sizePct, noiquy,
       icon: isImg ? '' : (iconDirect || '📦'),
       image: isImg ? iconDirect : '',
-      placeAction: 'remove'
+      placeAction: 'remove',
+      frontOfOverlay: csItemLayer !== 'behind'
     });
     document.getElementById('csNoiquy').value='';
     document.getElementById('csItemIcon').value='';
@@ -1092,7 +1116,8 @@ function onCsPreviewClick(e){
         sizePct, noiquy,
         icon: isImg ? '' : (iconDirect || '📦'),
         image: isImg ? iconDirect : '',
-        placeAction: csPlaceAction   // 'keep' hoặc 'remove'
+        placeAction: csPlaceAction,   // 'keep' hoặc 'remove'
+        frontOfOverlay: csItemLayer !== 'behind'
       });
       csPendingFrom = null;
       document.getElementById('csNoiquy').value='';
@@ -1149,6 +1174,7 @@ function renderCsList(){
     let subLabel = '';
     if(t.kind==='place'){
       subLabel = t.targetType==='trash' ? ' · 🗑️ vào thùng rác chung' : ` · ${t.placeAction==='remove'?'🗑️ biến mất':'📌 giữ nguyên'}`;
+      if(t.frontOfOverlay === false) subLabel += ' · 🔙 sau lớp phủ';
     }
     return `
     <div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
@@ -1259,6 +1285,7 @@ function resetCsForm(){
   csTrashHome = null;
   setCsPlaceAction('keep');
   setCsPlaceTarget('zone');
+  setCsItemLayer('front');
   updateCsTrashPosInfo();
   document.getElementById('csPublishBtn').textContent = '🚀 Publish';
   document.getElementById('csCancelEditBtn').style.display = 'none';

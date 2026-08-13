@@ -441,6 +441,8 @@ function buildTasks(){
       el.style.top = (t.y*100) + '%';
       el.style.width = sizePct + '%';
       el.style.transform = 'translate(-50%,-50%)';
+      // Mặc định (t.frontOfOverlay không có hoặc true) = trước lớp phủ, giữ hành vi cũ tương thích ngược
+      el.style.zIndex = (t.frontOfOverlay === false) ? CS_Z.ITEM_BEHIND : CS_Z.ITEM_FRONT;
       if(t.image){
         el.style.aspectRatio = '1';
         el.style.background = 'none';

@@ -488,7 +488,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       <div class="page-hdr">
         <h2>🧹 Tạo Game Dọn Dẹp Không Gian</h2>
         <p>Dán ảnh không gian bừa bộn, đánh dấu từng nhiệm vụ (lau vết bẩn / đặt đồ đúng chỗ) ngay trên ảnh</p>
-        <p style="font-size:12px;color:var(--t3);margin-top:4px"> 'https://raw.githubusercontent.com/baovanhoang-LnD/OhM-nd-Lab/main/Elements/' </code>.</p>
+        <p style="font-size:12px;color:var(--t3);margin-top:4px">💡 Quy trình đưa ảnh lên GitHub: mở repo trên GitHub → vào thư mục <code>assets/clean-space/</code> (tạo mới nếu chưa có) → "Add file" → "Upload files" → kéo ảnh vào → Commit. Link dùng được có dạng <code>https://tenuser.github.io/tenrepo/assets/clean-space/ten-anh.jpg</code>.</p>
       </div>
       <div class="row">
         <div class="col">
@@ -586,8 +586,8 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Nội quy hiện ra khi hoàn thành nhiệm vụ này</label>
-              <textarea id="csNoiquy" placeholder="VD: Luôn lau bàn sau khi ăn uống ở khu vực bếp chung nhé!"></textarea>
+              <label class="form-label">Ghi chú nội quy (tùy chọn — không hiện cho người chơi)</label>
+              <textarea id="csNoiquy" placeholder="VD: Luôn lau bàn sau khi ăn uống ở khu vực bếp chung nhé! (chỉ để bạn ghi chú lại, không hiển thị trong game)"></textarea>
             </div>
             <hr class="dv">
             <div class="card-label">Nhiệm vụ của màn này (<span id="csCount">0</span>)</div>
@@ -908,7 +908,7 @@ function setCsMode(mode){
   updateCsLayerGroupVisibility();
 
   if(mode==='wipe'){
-    document.getElementById('csModeHint').textContent = '💡 Nhập nội quy (và ảnh vết bẩn nếu muốn), rồi bấm lên ảnh bên phải — mỗi lần bấm = 1 vết bẩn mới.';
+    document.getElementById('csModeHint').textContent = '💡 Bấm lên ảnh bên phải để thêm vết bẩn — mỗi lần bấm = 1 vết bẩn mới (ghi chú nội quy và ảnh vết bẩn đều là tùy chọn).';
     document.getElementById('csClickHint').textContent = '👁 Mỗi lần bấm lên ảnh sẽ thêm 1 vết bẩn tại đúng điểm bấm.';
     document.getElementById('csIconLabel').textContent = 'Ảnh vết bẩn — tùy chọn (để trống sẽ dùng hình vết bẩn mặc định)';
     document.getElementById('csItemIcon').placeholder = 'Dán link ảnh vết bẩn (cà phê, dầu mỡ...) — để trống nếu dùng mặc định';
@@ -952,8 +952,8 @@ function setCsPlaceTarget(target){
 
 function updateCsPlaceHints(){
   document.getElementById('csModeHint').textContent = csPlaceTarget==='trash'
-    ? '💡 Nhập nội quy + icon vật thể, rồi bấm lên ảnh 1 lần: vị trí vật đang để sai (vật sẽ tự bay vào thùng rác chung).'
-    : '💡 Chọn hành vi bên dưới, nhập nội quy + icon vật thể, rồi bấm lên ảnh 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.';
+    ? '💡 Bấm lên ảnh 1 lần: vị trí vật đang để sai (vật sẽ tự bay vào thùng rác chung). Icon vật thể và ghi chú nội quy đều là tùy chọn.'
+    : '💡 Chọn hành vi bên dưới, rồi bấm lên ảnh 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng. Icon vật thể và ghi chú nội quy đều là tùy chọn.';
   document.getElementById('csClickHint').textContent = csPlaceTarget==='trash'
     ? '👁 Bấm 1 lần = vị trí đồ đang để sai. Không cần đánh dấu đích vì đích là thùng rác chung.'
     : '👁 Bấm lần 1 = vị trí đồ đang để sai (màu đỏ). Bấm lần 2 = vị trí đúng quy định (màu xanh).';
@@ -1105,7 +1105,6 @@ function onCsPreviewClick(e){
   }
 
   const noiquy = document.getElementById('csNoiquy').value.trim();
-  if(!noiquy){ showToast('Nhập nội quy trước khi đánh dấu vị trí!','bad'); return; }
   const sizePct = +document.getElementById('csSizePct').value || 9;
   const icon = document.getElementById('csItemIcon').value.trim();
 

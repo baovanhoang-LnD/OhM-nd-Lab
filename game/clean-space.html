@@ -49,7 +49,8 @@
 .cs-item.placed{ pointer-events:none; cursor:default; }
 
 .cs-zone{
-  position:absolute; opacity:.55;
+  position:absolute; border:2px dashed var(--orange); border-radius:8px;
+  opacity:.55;
 }
 
 .placed-badge{
@@ -92,16 +93,30 @@
 
 .cs-stage-transition{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  background: rgba(250,246,238,0); pointer-events:none;
-  opacity:0; transition: all .35s ease; z-index:60;
+  background: rgba(60,50,35,0); pointer-events:none;
+  opacity:0; transition: all .3s ease; z-index:60; padding:20px;
 }
-.cs-stage-transition.show{ background: rgba(250,246,238,0.92); opacity:1; }
-.cs-stage-trans-inner{
-  text-align:center; font-size:20px; font-weight:800; color:var(--text);
-  transform: scale(0.85); transition: transform .35s ease;
+.cs-stage-transition.show{ background: rgba(60,50,35,0.45); opacity:1; pointer-events:auto; }
+
+.cs-note-card{
+  position:relative; max-width:340px; width:100%;
+  background: linear-gradient(180deg, #fff9d6 0%, #fff3b0 100%);
+  border-radius: 4px; padding: 34px 26px 24px;
+  box-shadow: 0 18px 40px -10px rgba(0,0,0,.45);
+  transform: rotate(-1.2deg) scale(0.9); transition: transform .3s ease;
+  text-align:center;
 }
-.cs-stage-transition.show .cs-stage-trans-inner{ transform: scale(1); }
-.cs-stage-trans-inner span{ font-size:13px; font-weight:600; color:var(--t3); display:block; margin-top:4px; }
+.cs-stage-transition.show .cs-note-card{ transform: rotate(-1.2deg) scale(1); }
+.cs-note-tape{
+  position:absolute; top:-14px; left:50%; transform:translateX(-50%) rotate(-3deg);
+  width:70px; height:26px; background: rgba(255,255,255,.55);
+  border:1px solid rgba(0,0,0,.05); box-shadow:0 2px 4px rgba(0,0,0,.15);
+}
+.cs-note-text{
+  font-size:15px; line-height:1.6; color:#4a3a1a; font-weight:600;
+  white-space:pre-wrap; margin-bottom:20px;
+}
+.cs-note-btn{ width:100%; justify-content:center; }
 
 .score-big{font-family:var(--mono);font-size:48px;font-weight:500;color:var(--orange);line-height:1;margin:10px 0 4px;}
 .score-sub{font-size:13px;color:var(--t2);margin-bottom:16px;}
@@ -601,7 +616,6 @@ function onWipeSuccess(stainEl){
   const t = G.tasks[idx];
   ensureTimerStarted();
   spawnSparkle(stainEl);
-  showCsToast(t.noiquy);
   markTaskDone();
 }
 
@@ -660,7 +674,6 @@ function itemEnd(cx,cy){
       activeItem.appendChild(badge);
       spawnSparkle({getBoundingClientRect:()=>({left:snapX+sr.left,top:snapY+sr.top,width:iw,height:ih})});
     }
-    showCsToast(activeTask.noiquy);
     markTaskDone();
   } else {
     activeItem.style.left=itemHome.left; activeItem.style.top=itemHome.top; activeItem.style.transform=itemHome.transform;
@@ -710,35 +723,51 @@ function markTaskDone(){
   const lbl=document.getElementById('csProgLbl'); if(lbl) lbl.textContent=`${G.doneCount} / ${G.totalTasks} nhiệm vụ`;
 
   if(G.stageDoneCount >= G.tasks.length){
-    if(G.stageIdx < G.stages.length - 1){
-      setTimeout(()=>goToNextStage(), 700);
-    } else {
-      setTimeout(()=>endGame(), 700);
-    }
+    setTimeout(()=>showStageCompleteNote(), 600);
   }
 }
 
+// ── POPUP "GIẤY NOTE" KHI HOÀN THÀNH 1 MÀN ─────────────────────
+function showStageCompleteNote(){
+  const isLastStage = G.stageIdx >= G.stages.length - 1;
+  const noteText = G.stage.completionNote && G.stage.completionNote.trim()
+    ? G.stage.completionNote
+    : '🎉 Bạn đã hoàn thành xuất sắc!';
+
+  const holder = document.getElementById('csStageTransition');
+  if(!holder) return;
+  holder.innerHTML = `
+    <div class="cs-note-card">
+      <div class="cs-note-tape"></div>
+      <div class="cs-note-text">${escH(noteText).replace(/\n/g,'<br>')}</div>
+      <button class="btn btn-primary cs-note-btn" id="csNoteBtn">
+        ${isLastStage ? '🏁 Hoàn thành' : 'Ván tiếp theo →'}
+      </button>
+    </div>`;
+  holder.classList.add('show');
+
+  document.getElementById('csNoteBtn').onclick = () => {
+    holder.classList.remove('show');
+    if(isLastStage){
+      endGame();
+    } else {
+      goToNextStage();
+    }
+  };
+}
+
 function goToNextStage(){
-  const trans = document.getElementById('csStageTransition');
-  const nextNum = G.stageIdx + 2;
-  if(trans){
-    trans.innerHTML = `<div class="cs-stage-trans-inner">🎉 Hoàn thành Màn ${G.stageIdx+1}!<br><span>Chuyển sang Màn ${nextNum}...</span></div>`;
-    trans.classList.add('show');
-  }
-  setTimeout(()=>{
-    if(trans) trans.classList.remove('show');
-    loadStage(G.stageIdx + 1);
-  }, 1400);
+  loadStage(G.stageIdx + 1);
 }
 
 function endGame(){
   G.done = true;
   clearInterval(G.interval);
   document.getElementById('rTime').textContent = formatTime(G.timer);
-  document.getElementById('rSub').textContent = `${G.tasks.length} nhiệm vụ hoàn thành`;
+  document.getElementById('rSub').textContent = `${G.totalTasks} nhiệm vụ hoàn thành`;
   document.getElementById('rDetails').innerHTML = `
     <div class="result-row"><span>⏱ Thời gian</span><span class="result-val">${formatTime(G.timer)}</span></div>
-    <div class="result-row"><span>🧹 Nhiệm vụ</span><span class="result-val">${G.tasks.length} / ${G.tasks.length}</span></div>
+    <div class="result-row"><span>🧹 Nhiệm vụ</span><span class="result-val">${G.totalTasks} / ${G.totalTasks}</span></div>
     <div class="result-row"><span>❌ Lần thả sai</span><span class="result-val">${G.misses}</span></div>
     <div class="result-row"><span>👤 Người chơi</span><span class="result-val">${escH(playerName)}</span></div>`;
   document.getElementById('rSaveBtn').textContent = 'Lưu điểm';

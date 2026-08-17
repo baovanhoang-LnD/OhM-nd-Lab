@@ -138,6 +138,33 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
 .cs-marker.to{background:rgba(45,164,78,.88);}
 .cs-marker.rag{background:rgba(59,130,246,.9);font-size:14px;}
 .cs-marker.trash{background:rgba(16,163,74,.9);font-size:14px;}
+
+/* ── WYSIWYG EDIT MARKERS ─────────────────────────────────────── */
+.cs-edit-marker{
+  position:absolute; transform:translate(-50%,-50%);
+  cursor:grab; touch-action:none; user-select:none;
+  display:flex; align-items:center; justify-content:center;
+}
+.cs-edit-marker.dragging{ cursor:grabbing; opacity:.85; z-index:50; }
+.cs-edit-marker img{ width:100%; height:100%; object-fit:contain; pointer-events:none; filter:drop-shadow(0 2px 4px rgba(0,0,0,.25)); }
+.cs-em-icon{ font-size:22px; line-height:1; filter:drop-shadow(0 2px 3px rgba(0,0,0,.2)); pointer-events:none; }
+.cs-edit-marker.zone{
+  border:2px dashed var(--orange); border-radius:6px; background:rgba(244,107,27,.10);
+}
+.cs-edit-marker.wipe:not(.zone){ filter: drop-shadow(0 2px 3px rgba(0,0,0,.2)); }
+.cs-em-badge{
+  position:absolute; top:-9px; left:-9px; width:18px; height:18px; border-radius:50%;
+  background:var(--text); color:#fff; font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; pointer-events:none;
+  box-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+.cs-edit-marker.from .cs-em-badge{ background:rgba(224,62,62,.92); }
+.cs-edit-marker.to .cs-em-badge{ background:rgba(45,164,78,.92); }
+.cs-edit-marker.rag .cs-em-icon, .cs-edit-marker.trash .cs-em-icon{ font-size:24px; }
+.cs-em-resize{
+  position:absolute; right:-7px; bottom:-7px; width:14px; height:14px; border-radius:50%;
+  background:#fff; border:2px solid var(--orange); cursor:nwse-resize; box-shadow:0 1px 3px rgba(0,0,0,.3);
+}
 .cs-marker-line{position:absolute;pointer-events:none;}
 </style>
 </head>
@@ -184,6 +211,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
     <div id="page-sudoku" class="page active">
       <div class="page-hdr">
         <h2>🔢 Tạo Sudoku Challenge</h2>
+        <p>Có thể publish nhiều ván cùng lúc — mỗi ván có leaderboard riêng</p>
       </div>
       <div class="row">
         <div class="col">
@@ -191,11 +219,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="cTitle">
+              <input type="text" id="cTitle" placeholder="VD: Sudoku Tuần 1 — Phòng Marketing">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <textarea id="cDesc"></textarea>
+              <textarea id="cDesc" placeholder="Ghi chú thêm cho người chơi..."></textarea>
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -216,6 +244,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
                 <button class="btn btn-secondary btn-sm" onclick="randomSeed()">🎲 Random</button>
               </div>
             </div>
+            <div class="tip">💡 Mỗi seed = 1 câu đố cố định. Tất cả người chơi cùng seed → cùng câu đố.</div>
             <hr class="dv">
             <div style="display:flex;gap:8px">
               <button class="btn btn-secondary" onclick="previewChallenge()" style="flex:1;justify-content:center">👁 Xem trước</button>
@@ -253,11 +282,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="spTitle">
+              <input type="text" id="spTitle" placeholder="VD: Tìm điểm khác — Văn phòng mới">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="spDesc">
+              <input type="text" id="spDesc" placeholder="Gợi ý hoặc chú thích...">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -274,12 +303,12 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Link ảnh</div>
             <div class="form-group">
               <label class="form-label">Link ảnh gốc (trái)</label>
-              <input type="text" id="spImg1">
+              <input type="text" id="spImg1" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
               <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(1)" style="margin-top:6px">👁 Xem trước ảnh trái</button>
             </div>
             <div class="form-group">
               <label class="form-label">Link ảnh đã chỉnh (phải)</label>
-              <input type="text" id="spImg2">
+              <input type="text" id="spImg2" placeholder="https://drive.google.com/... hoặc https://i.imgur.com/...">
               <button class="btn btn-secondary btn-sm" onclick="previewSpotImg(2)" style="margin-top:6px">👁 Xem trước ảnh phải</button>
             </div>
             <div class="tip">💡 Sau khi xem trước, click vào <strong>ảnh phải</strong> để đánh dấu 10 điểm khác biệt.</div>
@@ -342,11 +371,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="mmTitle">
+              <input type="text" id="mmTitle" placeholder="VD: Lật thẻ — Sản phẩm mới Q3">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="mmDesc">
+              <input type="text" id="mmDesc" placeholder="Gợi ý hoặc chú thích...">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -394,11 +423,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="stkTitle">
+              <input type="text" id="stkTitle" placeholder="VD: Sticker Puzzle — Team Building 2026">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="stkDesc">
+              <input type="text" id="stkDesc" placeholder="Gợi ý hoặc chú thích...">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -408,14 +437,14 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Bước 1 — Ảnh nền</div>
             <div class="tip tip-blue" style="margin-bottom:10px">📌 Ảnh nền cần có sẵn các mảng trống hình bóng trắng do bạn thiết kế trước (Photoshop/Figma...).</div>
             <div class="form-group">
-              <input type="text" id="stkBgUrl">
+              <input type="text" id="stkBgUrl" placeholder="Dán link ảnh nền..." oninput="renderStkPreview()">
             </div>
             <hr class="dv">
             <div class="card-label">Bước 2 — Thêm từng sticker</div>
             <div class="tip" style="margin-bottom:10px">💡 Dán link 1 sticker → nhập kích thước ước lượng → <strong>bấm vào đúng vị trí trên ảnh nền bên phải</strong> để đánh dấu. Lặp lại cho từng sticker.</div>
             <div class="form-group">
               <label class="form-label">Link sticker hiện tại</label>
-              <input type="text" id="stkPieceUrl">
+              <input type="text" id="stkPieceUrl" placeholder="Dán link ảnh sticker...">
             </div>
             <div style="display:flex;gap:8px">
               <div class="form-group" style="flex:1">
@@ -467,11 +496,11 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label">Thông tin ván</div>
             <div class="form-group">
               <label class="form-label">Tiêu đề</label>
-              <input type="text" id="csTitle">
+              <input type="text" id="csTitle" placeholder="VD: Dọn Sạch Bếp Chung — Tuần 1">
             </div>
             <div class="form-group">
               <label class="form-label">Mô tả (tùy chọn)</label>
-              <input type="text" id="csDesc">
+              <input type="text" id="csDesc" placeholder="Gợi ý hoặc chú thích...">
             </div>
             <div class="form-group">
               <label class="form-label">Hết hạn lúc</label>
@@ -482,7 +511,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="tip tip-blue" style="margin-bottom:10px">📌 Dùng cho nhiệm vụ "vứt rác" ở BẤT KỲ màn nào — 1 icon cố định trên màn hình xuyên suốt cả ván, không cần xuất hiện trong từng ảnh nền.</div>
             <div class="form-group">
               <label class="form-label">Ảnh thùng rác — tùy chọn (để trống dùng icon mặc định 🗑️)</label>
-              <input type="text" id="csTrashUrl">
+              <input type="text" id="csTrashUrl" placeholder="Dán link ảnh từ GitHub Pages (VD: .../assets/thung-rac.png)...">
             </div>
             <div id="csTrashPosInfo" style="font-size:12px;color:var(--t3);margin-bottom:4px">Chưa đặt vị trí — chọn "📍 Vị trí thùng rác" bên dưới rồi bấm lên ảnh.</div>
             <hr class="dv">
@@ -494,16 +523,21 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             <div class="card-label" id="csStepBgLabel">Ảnh không gian — Màn <span id="csCurrentStageNum">1</span></div>
             <div class="tip tip-blue" style="margin-bottom:10px">📌 <strong>Khuyến nghị dùng ảnh lưu trong repo GitHub (GitHub Pages)</strong> để có chất lượng ảnh nét nhất — Google Drive cho ảnh mờ hơn do bị nén phía Google. Đưa ảnh vào thư mục repo (VD: <code>assets/clean-space/</code>) rồi dán link dạng <code>https://tenuser.github.io/tenrepo/assets/clean-space/ten-anh.jpg</code>.</div>
             <div class="form-group">
-              <input type="text" id="csBgUrl">
+              <input type="text" id="csBgUrl" placeholder="Dán link ảnh nền từ GitHub Pages..." oninput="renderCsPreview()">
             </div>
             <div class="form-group">
               <label class="form-label">Ảnh khăn lau — tùy chọn (để trống dùng hình khăn mặc định)</label>
-              <input type="text" id="csRagUrl">
+              <input type="text" id="csRagUrl" placeholder="Dán link ảnh khăn lau từ GitHub Pages...">
             </div>
             <div class="form-group">
               <label class="form-label">Ảnh lớp phủ trước — tùy chọn (che vật thể, VD: viền bàn)</label>
-              <input type="text" id="csFrontUrl" oninput="renderCsPreview(); updateCsLayerGroupVisibility();">
+              <input type="text" id="csFrontUrl" placeholder="Dán link ảnh PNG nền trong suốt từ GitHub Pages..." oninput="renderCsPreview(); updateCsLayerGroupVisibility();">
               <div class="tip" style="margin-top:8px">📌 Dùng ảnh PNG nền trong suốt, kích thước khớp với ảnh nền — chỉ vẽ phần vật thể cần "che" (VD: mép bàn) để nó luôn nổi trên vật thể kéo-thả (VD: ghế).</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">💌 Lời khen khi hoàn thành màn này</label>
+              <textarea id="csCompletionNote" placeholder="VD: Tuyệt vời! Bạn đã dọn xong khu bếp chung. Cảm ơn bạn đã giữ gìn không gian chung sạch đẹp!"></textarea>
+              <div class="tip" style="margin-top:8px">📌 Hiện dưới dạng tờ giấy note ngay khi người chơi hoàn thành hết nhiệm vụ của màn này. Để trống sẽ dùng lời khen mặc định.</div>
             </div>
             <hr class="dv">
             <div class="card-label">Thêm nhiệm vụ cho màn này</div>
@@ -542,7 +576,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             </div>
             <div class="form-group" id="csIconGroup">
               <label class="form-label" id="csIconLabel">Icon vật thể (emoji) hoặc link ảnh — tùy chọn</label>
-              <input type="text" id="csItemIcon">
+              <input type="text" id="csItemIcon" placeholder="VD: 🗑️ hoặc link ảnh vật thể...">
               <div class="tip tip-blue" style="margin-top:8px">📌 Nên dùng link ảnh từ GitHub Pages để có chất lượng nét nhất. Vẫn dán được link Google Drive (Share → Anyone with link) nhưng ảnh có thể bị mờ do Google tự nén.</div>
             </div>
             <div style="display:flex;gap:8px">
@@ -553,7 +587,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             </div>
             <div class="form-group">
               <label class="form-label">Nội quy hiện ra khi hoàn thành nhiệm vụ này</label>
-              <textarea id="csNoiquy"></textarea>
+              <textarea id="csNoiquy" placeholder="VD: Luôn lau bàn sau khi ăn uống ở khu vực bếp chung nhé!"></textarea>
             </div>
             <hr class="dv">
             <div class="card-label">Nhiệm vụ của màn này (<span id="csCount">0</span>)</div>
@@ -567,8 +601,9 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
         </div>
         <div class="col" style="min-width:280px">
           <div class="card">
-            <div class="card-label">Ảnh không gian — bấm để đánh dấu</div>
-            <div class="tip" style="margin-bottom:12px" id="csClickHint">👁 Chọn "Lau vết bẩn" rồi bấm 1 lần lên ảnh cho mỗi vết bẩn. Chọn "Đặt đồ đúng chỗ" rồi bấm 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.</div>
+            <div class="card-label">Ảnh không gian — bấm để đánh dấu, kéo để chỉnh</div>
+            <div class="tip" style="margin-bottom:8px" id="csClickHint">👁 Chọn "Lau vết bẩn" rồi bấm 1 lần lên ảnh cho mỗi vết bẩn. Chọn "Đặt đồ đúng chỗ" rồi bấm 2 lần: lần 1 = vị trí sai hiện tại, lần 2 = vị trí đúng.</div>
+            <div class="tip tip-blue" style="margin-bottom:12px">✋ Sau khi đánh dấu, có thể <strong>kéo trực tiếp vật thể</strong> trên ảnh để đổi vị trí, hoặc <strong>kéo chấm nhỏ ở góc</strong> để đổi kích thước — không cần đánh dấu lại từ đầu.</div>
             <div id="csPreviewWrap" style="position:relative;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg2);min-height:160px;display:flex;align-items:center;justify-content:center;cursor:crosshair">
               <span style="color:var(--t3);font-size:13px;padding:24px">Dán link ảnh nền để bắt đầu đánh dấu</span>
             </div>
@@ -588,6 +623,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
     <div id="page-visibility" class="page">
       <div class="page-hdr">
         <h2>👁️ Hiển Thị Game</h2>
+        <p>Bật/tắt game nào sẽ hiện trên trang chủ (index.html) — không ảnh hưởng các ván đang active</p>
       </div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -937,6 +973,7 @@ function getCurrentStageDraft(){
     ragHomeX: csRagHome ? csRagHome.x : null,
     ragHomeY: csRagHome ? csRagHome.y : null,
     frontOverlay: gdriveDirect(document.getElementById('csFrontUrl').value.trim()) || '',
+    completionNote: document.getElementById('csCompletionNote').value.trim(),
     tasks: csTasks
   };
 }
@@ -945,6 +982,7 @@ function loadStageDraft(stage){
   document.getElementById('csBgUrl').value = stage.background || '';
   document.getElementById('csRagUrl').value = stage.ragImage || '';
   document.getElementById('csFrontUrl').value = stage.frontOverlay || '';
+  document.getElementById('csCompletionNote').value = stage.completionNote || '';
   csRagHome = (stage.ragHomeX!=null && stage.ragHomeY!=null) ? {x:stage.ragHomeX, y:stage.ragHomeY} : null;
   csTasks = JSON.parse(JSON.stringify(stage.tasks || []));
   csPendingFrom = null;
@@ -1041,6 +1079,7 @@ function renderCsPreview(){
 }
 
 function onCsPreviewClick(e){
+  if(csSuppressNextClick){ csSuppressNextClick = false; return; }
   const img = document.getElementById('csBgImg');
   if(!img) return;
   const rect = img.getBoundingClientRect();
@@ -1135,30 +1174,152 @@ function updateCsTrashPosInfo(){
     : 'Chưa đặt vị trí — chọn "🗑️ Vị trí thùng rác" bên dưới rồi bấm lên ảnh.';
 }
 
+// ══════════════════════════════════════════════════════════════
+//  WYSIWYG PREVIEW — hiện ảnh thật + kéo đổi vị trí + kéo góc đổi size
+// ══════════════════════════════════════════════════════════════
+let csSuppressNextClick = false; // chặn onCsPreviewClick bắn nhầm ngay sau khi vừa kéo 1 marker
+
+function csMarkerHtml(o){
+  // o: {cls, kind, idx, x, y, sizePct, image, fallbackIcon, isZone, resizable, badge}
+  const sizeStyle = `left:${o.x*100}%;top:${o.y*100}%;width:${o.sizePct}%;aspect-ratio:1;`;
+  const inner = o.isZone
+    ? ''
+    : (o.image ? `<img src="${escH(o.image)}" draggable="false">` : `<span class="cs-em-icon">${o.fallbackIcon||'📦'}</span>`);
+  return `<div class="cs-edit-marker ${o.cls}${o.isZone?' zone':''}" data-kind="${o.kind}" data-idx="${o.idx}" style="${sizeStyle}">
+      ${o.badge!==false?`<span class="cs-em-badge">${o.badge}</span>`:''}
+      ${inner}
+      ${o.resizable?'<span class="cs-em-resize" title="Kéo để đổi kích thước"></span>':''}
+    </div>`;
+}
+
 function renderCsMarkers(){
   const holder = document.getElementById('csMarkers');
   if(!holder) return;
   let html = '';
   csTasks.forEach((t,i)=>{
+    const sizePct = t.sizePct || 8;
     if(t.kind==='wipe'){
-      html += `<div class="cs-marker wipe" style="left:${t.x*100}%;top:${t.y*100}%">${i+1}</div>`;
-    } else if(t.targetType==='trash'){
-      html += `<div class="cs-marker from" style="left:${t.fromX*100}%;top:${t.fromY*100}%" title="Vứt vào thùng rác chung">${i+1}</div>`;
+      html += csMarkerHtml({ cls:'wipe', kind:'wipe-pos', idx:i, x:t.x, y:t.y, sizePct, image:t.image, fallbackIcon:'🧽', resizable:true, badge:i+1 });
     } else {
-      html += `<div class="cs-marker from" style="left:${t.fromX*100}%;top:${t.fromY*100}%">${i+1}</div>`;
-      html += `<div class="cs-marker to" style="left:${t.toX*100}%;top:${t.toY*100}%">${i+1}</div>`;
+      html += csMarkerHtml({ cls:'from', kind:'place-from', idx:i, x:t.fromX, y:t.fromY, sizePct, image:t.image, fallbackIcon:t.icon||'📦', resizable:true, badge:i+1 });
+      if(t.targetType!=='trash'){
+        html += csMarkerHtml({ cls:'to', kind:'place-to', idx:i, x:t.toX, y:t.toY, sizePct, isZone:true, resizable:true, badge:i+1 });
+      }
     }
   });
   if(csPendingFrom){
     html += `<div class="cs-marker from" style="left:${csPendingFrom.x*100}%;top:${csPendingFrom.y*100}%">•</div>`;
   }
   if(csRagHome){
-    html += `<div class="cs-marker rag" style="left:${csRagHome.x*100}%;top:${csRagHome.y*100}%" title="Vị trí gốc khăn lau">🧻</div>`;
+    html += csMarkerHtml({ cls:'rag', kind:'rag', idx:-1, x:csRagHome.x, y:csRagHome.y, sizePct:9, fallbackIcon:'🧻', resizable:false, badge:false });
   }
   if(csTrashHome){
-    html += `<div class="cs-marker trash" style="left:${csTrashHome.x*100}%;top:${csTrashHome.y*100}%" title="Vị trí thùng rác chung">🗑️</div>`;
+    html += csMarkerHtml({ cls:'trash', kind:'trash', idx:-1, x:csTrashHome.x, y:csTrashHome.y, sizePct:9, fallbackIcon:'🗑️', resizable:false, badge:false });
   }
   holder.innerHTML = html;
+  holder.querySelectorAll('.cs-edit-marker').forEach(el => attachMarkerInteraction(el));
+}
+
+// Đọc/ghi vị trí (x,y dạng phần trăm 0-1) đúng vào đúng chỗ trong dữ liệu, theo loại marker
+function csMarkerGetPos(kind, idx){
+  if(kind==='wipe-pos') return { x:csTasks[idx].x, y:csTasks[idx].y };
+  if(kind==='place-from') return { x:csTasks[idx].fromX, y:csTasks[idx].fromY };
+  if(kind==='place-to') return { x:csTasks[idx].toX, y:csTasks[idx].toY };
+  if(kind==='rag') return csRagHome;
+  if(kind==='trash') return csTrashHome;
+}
+function csMarkerSetPos(kind, idx, x, y){
+  x = Math.max(0, Math.min(1, x)); y = Math.max(0, Math.min(1, y));
+  if(kind==='wipe-pos'){ csTasks[idx].x=x; csTasks[idx].y=y; }
+  else if(kind==='place-from'){ csTasks[idx].fromX=x; csTasks[idx].fromY=y; }
+  else if(kind==='place-to'){ csTasks[idx].toX=x; csTasks[idx].toY=y; }
+  else if(kind==='rag'){ csRagHome={x,y}; }
+  else if(kind==='trash'){ csTrashHome={x,y}; updateCsTrashPosInfo(); }
+}
+function csMarkerSetSize(kind, idx, sizePct){
+  sizePct = Math.max(3, Math.min(40, sizePct));
+  if(kind==='wipe-pos') csTasks[idx].sizePct = sizePct;
+  else if(kind==='place-from' || kind==='place-to') csTasks[idx].sizePct = sizePct;
+  return sizePct;
+}
+
+// Gắn kéo-di-chuyển (thân marker) và kéo-đổi-size (chấm góc dưới-phải)
+function attachMarkerInteraction(el){
+  const kind = el.dataset.kind;
+  const idx = +el.dataset.idx;
+  const resizeHandle = el.querySelector('.cs-em-resize');
+
+  function getImgRect(){ return document.getElementById('csBgImg').getBoundingClientRect(); }
+
+  // ── KÉO DI CHUYỂN ──
+  function moveStart(e){
+    e.stopPropagation();
+    const startX = e.clientX ?? e.touches[0].clientX;
+    const startY = e.clientY ?? e.touches[0].clientY;
+    el.classList.add('dragging');
+
+    function onMove(ev){
+      const cx = ev.clientX ?? ev.touches[0].clientX;
+      const cy = ev.clientY ?? ev.touches[0].clientY;
+      const r = getImgRect();
+      const nx = (cx - r.left) / r.width;
+      const ny = (cy - r.top) / r.height;
+      csMarkerSetPos(kind, idx, nx, ny);
+      el.style.left = (Math.max(0,Math.min(1,nx))*100) + '%';
+      el.style.top  = (Math.max(0,Math.min(1,ny))*100) + '%';
+      // Nếu đây là cặp "from" của 1 nhiệm vụ place, không cần vẽ lại "to" — độc lập tọa độ
+    }
+    function onUp(){
+      el.classList.remove('dragging');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+      csSuppressNextClick = true;
+      renderCsList();
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, {passive:true});
+    window.addEventListener('touchend', onUp);
+  }
+  el.addEventListener('mousedown', moveStart);
+  el.addEventListener('touchstart', moveStart, {passive:false});
+
+  // ── KÉO ĐỔI KÍCH THƯỚC (chấm góc) ──
+  if(resizeHandle){
+    function resizeStart(e){
+      e.stopPropagation(); e.preventDefault();
+      el.classList.add('dragging');
+      function onMove(ev){
+        const cx = ev.clientX ?? ev.touches[0].clientX;
+        const cy = ev.clientY ?? ev.touches[0].clientY;
+        const r = getImgRect();
+        const pos = csMarkerGetPos(kind, idx);
+        const centerX = r.left + pos.x*r.width;
+        const centerY = r.top + pos.y*r.height;
+        const distPx = Math.max(6, Math.hypot(cx-centerX, cy-centerY));
+        // sizePct = đường kính (2×bán kính) tính theo % chiều rộng ảnh
+        const newSizePct = csMarkerSetSize(kind, idx, (distPx*2 / r.width) * 100);
+        el.style.width = newSizePct + '%';
+      }
+      function onUp(){
+        el.classList.remove('dragging');
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onUp);
+        csSuppressNextClick = true;
+        renderCsList();
+      }
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      window.addEventListener('touchmove', onMove, {passive:true});
+      window.addEventListener('touchend', onUp);
+    }
+    resizeHandle.addEventListener('mousedown', resizeStart);
+    resizeHandle.addEventListener('touchstart', resizeStart, {passive:false});
+  }
 }
 
 function renderCsList(){
@@ -1195,6 +1356,7 @@ function renderCsList(){
 function updateCsTaskSize(i, val){
   const v = Math.max(3, Math.min(40, +val || 9));
   csTasks[i].sizePct = v;
+  renderCsMarkers();
   showToast(`📐 Nhiệm vụ #${i+1}: kích thước ${v}%`,'');
 }
 
@@ -1272,6 +1434,7 @@ function resetCsForm(){
   document.getElementById('csRagUrl').value='';
   document.getElementById('csFrontUrl').value='';
   document.getElementById('csTrashUrl').value='';
+  document.getElementById('csCompletionNote').value='';
   document.getElementById('csNoiquy').value='';
   document.getElementById('csItemIcon').value='';
   csStages = [];

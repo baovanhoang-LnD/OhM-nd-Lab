@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Office Go! — OhM!nd Lab</title>
+<title>Dọn Dẹp Không Gian — OhM!nd Lab</title>
 <link rel="icon" type="image/png" href="../pic/Favicon1.png">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
@@ -50,7 +50,7 @@
 
 .cs-zone{
   position:absolute; border:2px dashed var(--orange); border-radius:8px;
-  opacity:0;
+  opacity:.55;
 }
 
 .placed-badge{
@@ -62,7 +62,7 @@
 }
 
 .cs-rag{
-  position:absolute; left:14px; bottom:14px; width:60px; height:40px;
+  position:absolute; left:14px; bottom:14px; width:60px; aspect-ratio:3/2;
   cursor:grab; z-index:20; touch-action:none;
   filter: drop-shadow(0 6px 8px rgba(0,0,0,.18));
 }
@@ -70,7 +70,7 @@
 .cs-rag svg{ width:100%; height:100%; }
 
 .cs-trash-bin{
-  position:absolute; width:56px; height:56px;
+  position:absolute; width:56px; aspect-ratio:1;
   z-index:14; pointer-events:none;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,.22));
 }
@@ -175,7 +175,7 @@
       <div class="game-header">
         <button class="back-btn" onclick="backToList()">← Danh sách</button>
         <div>
-          <div class="game-title" id="gameTitle">Office Go!</div>
+          <div class="game-title" id="gameTitle">Dọn Dẹp Không Gian</div>
           <div class="game-subtitle" id="gameSubtitle"></div>
         </div>
       </div>
@@ -323,7 +323,7 @@ function startCardCountdown(id, deadline){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  GAME ENGINE — Office Go!
+//  GAME ENGINE — DỌN DẸP KHÔNG GIAN
 //  2 loại nhiệm vụ:
 //   - "wipe":  kéo khăn lau đến vết bẩn tại (x,y) để xóa tại chỗ
 //   - "place": kéo vật từ (fromX,fromY) đến đúng vùng (toX,toY)
@@ -441,6 +441,7 @@ function buildTasks(){
     trashEl.innerHTML = G.ch.trashImage
       ? `<img src="${escH(G.ch.trashImage)}" style="width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none" draggable="false">`
       : `<div class="cs-trash-default">🗑️</div>`;
+    if(G.ch.trashSizePct){ trashEl.style.width = G.ch.trashSizePct + '%'; }
     stage.appendChild(trashEl);
     positionTrashBin(trashEl, stage);
   }
@@ -527,6 +528,7 @@ function buildTasks(){
       <rect x="6" y="6" width="88" height="58" rx="10" fill="#f2f0e6" stroke="#d8d2c0" stroke-width="3"/>
       <path d="M6 20 H94" stroke="#d8d2c0" stroke-width="3"/><path d="M6 46 H94" stroke="#d8d2c0" stroke-width="3"/>
       <rect x="6" y="6" width="88" height="14" rx="6" fill="#f46b1b" opacity="0.5"/></svg>`;
+    if(G.stage.ragSizePct){ rag.style.width = G.stage.ragSizePct + '%'; }
     stage.appendChild(rag);
     setupRag(rag, stage);
   }

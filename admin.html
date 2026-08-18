@@ -194,7 +194,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       <div class="nav-item" onclick="switchPage('spot',this)"><span>🔍</span> Spot Difference</div>
       <div class="nav-item" onclick="switchPage('memory',this)"><span>🃏</span> Lật Thẻ</div>
       <div class="nav-item" onclick="switchPage('sticker',this)"><span>🧩</span> Sticker Puzzle</div>
-      <div class="nav-item" onclick="switchPage('clean',this)"><span>🧹</span> Dọn Dẹp Không Gian</div>
+      <div class="nav-item" onclick="switchPage('clean',this)"><span>🧹</span> Office Go!</div>
       <div class="sb-section" style="margin-top:8px">Quản lý</div>
       <div class="nav-item" onclick="switchPage('visibility',this)"><span>👁️</span> Hiển Thị Game</div>
       <div class="nav-item" onclick="switchPage('manage',this)"><span>📋</span> Quản lý</div>
@@ -486,7 +486,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
     <!-- ══ CLEAN SPACE ═════════════════════════════════════════ -->
     <div id="page-clean" class="page">
       <div class="page-hdr">
-        <h2>🧹 Tạo Game Dọn Dẹp Không Gian</h2>
+        <h2>🧹 Tạo Game Office Go!</h2>
         <p>Dán ảnh không gian bừa bộn, đánh dấu từng nhiệm vụ (lau vết bẩn / đặt đồ đúng chỗ) ngay trên ảnh</p>
         <p style="font-size:12px;color:var(--t3);margin-top:4px">💡 Quy trình đưa ảnh lên GitHub: mở repo trên GitHub → vào thư mục <code>assets/clean-space/</code> (tạo mới nếu chưa có) → "Add file" → "Upload files" → kéo ảnh vào → Commit. Link dùng được có dạng <code>https://tenuser.github.io/tenrepo/assets/clean-space/ten-anh.jpg</code>.</p>
       </div>
@@ -879,7 +879,7 @@ function copyStkLink(){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  CLEAN SPACE (Dọn Dẹp Không Gian)
+//  CLEAN SPACE (Office Go!)
 //  tasks: [{kind:'wipe', x,y, sizePct, noiquy, icon}]
 //         [{kind:'place', fromX,fromY, toX,toY, sizePct, noiquy, icon}]
 // ══════════════════════════════════════════════════════════════
@@ -1420,7 +1420,7 @@ async function publishCleanSpace(){
   document.getElementById('csShareUrl').textContent = link;
   showToast(isEditing
     ? `✅ Đã cập nhật ván #${ch.id} — ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`
-    : `🚀 Dọn Dẹp Không Gian #${ch.id} đã publish với ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`, 'ok');
+    : `🚀 Office Go! #${ch.id} đã publish với ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`, 'ok');
 
   resetCsForm();
   if(isEditing) loadManage();
@@ -1449,7 +1449,7 @@ function resetCsForm(){
   updateCsTrashPosInfo();
   document.getElementById('csPublishBtn').textContent = '🚀 Publish';
   document.getElementById('csCancelEditBtn').style.display = 'none';
-  document.querySelector('#page-clean .page-hdr h2').textContent = '🧹 Tạo Game Dọn Dẹp Không Gian';
+  document.querySelector('#page-clean .page-hdr h2').textContent = '🧹 Tạo Game Office Go!';
   renderCsStageChips();
   renderCsPreview();
   renderCsList();
@@ -1514,7 +1514,7 @@ const GAME_TYPES = [
   { type:'spot-difference', icon:'🔍', name:'Spot Difference' },
   { type:'memory-match',    icon:'🃏', name:'Lật Thẻ' },
   { type:'sticker-puzzle',  icon:'🧩', name:'Sticker Puzzle' },
-  { type:'clean-space',     icon:'🧹', name:'Dọn Dẹp Không Gian' },
+  { type:'clean-space',     icon:'🧹', name:'Office Go!' },
 ];
 let gameSettings = {}; // {type: true/false}
 

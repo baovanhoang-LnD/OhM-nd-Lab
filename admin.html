@@ -194,7 +194,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       <div class="nav-item" onclick="switchPage('spot',this)"><span>🔍</span> Spot Difference</div>
       <div class="nav-item" onclick="switchPage('memory',this)"><span>🃏</span> Lật Thẻ</div>
       <div class="nav-item" onclick="switchPage('sticker',this)"><span>🧩</span> Sticker Puzzle</div>
-      <div class="nav-item" onclick="switchPage('clean',this)"><span>🧹</span> Office Go!</div>
+      <div class="nav-item" onclick="switchPage('clean',this)"><span>🧹</span> Dọn Dẹp Không Gian</div>
       <div class="sb-section" style="margin-top:8px">Quản lý</div>
       <div class="nav-item" onclick="switchPage('visibility',this)"><span>👁️</span> Hiển Thị Game</div>
       <div class="nav-item" onclick="switchPage('manage',this)"><span>📋</span> Quản lý</div>
@@ -486,7 +486,7 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
     <!-- ══ CLEAN SPACE ═════════════════════════════════════════ -->
     <div id="page-clean" class="page">
       <div class="page-hdr">
-        <h2>🧹 Tạo Game Office Go!</h2>
+        <h2>🧹 Tạo Game Dọn Dẹp Không Gian</h2>
         <p>Dán ảnh không gian bừa bộn, đánh dấu từng nhiệm vụ (lau vết bẩn / đặt đồ đúng chỗ) ngay trên ảnh</p>
         <p style="font-size:12px;color:var(--t3);margin-top:4px">💡 Quy trình đưa ảnh lên GitHub: mở repo trên GitHub → vào thư mục <code>assets/clean-space/</code> (tạo mới nếu chưa có) → "Add file" → "Upload files" → kéo ảnh vào → Commit. Link dùng được có dạng <code>https://tenuser.github.io/tenrepo/assets/clean-space/ten-anh.jpg</code>.</p>
       </div>
@@ -879,7 +879,7 @@ function copyStkLink(){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  CLEAN SPACE (Office Go!)
+//  CLEAN SPACE (Dọn Dẹp Không Gian)
 //  tasks: [{kind:'wipe', x,y, sizePct, noiquy, icon}]
 //         [{kind:'place', fromX,fromY, toX,toY, sizePct, noiquy, icon}]
 // ══════════════════════════════════════════════════════════════
@@ -894,6 +894,8 @@ let csCurrentStageIdx = 0;   // MỚI: đang soạn màn thứ mấy (0-indexed)
 let csPlaceTarget = 'zone';  // MỚI: 'zone' (đích trên ảnh, 2 click) hoặc 'trash' (thùng rác chung, 1 click)
 let csTrashHome = null;      // MỚI: {x,y} vị trí thùng rác — CẤP VÁN (không theo từng màn)
 let csItemLayer = 'front';   // MỚI: 'front' (trước lớp phủ, mặc định) hoặc 'behind' (sau lớp phủ)
+let csRagSizePct = 9;        // MỚI: kích thước khăn lau (% chiều rộng ảnh nền) — THEO TỪNG MÀN
+let csTrashSizePct = 12;     // MỚI: kích thước thùng rác (% chiều rộng ảnh nền) — CẤP VÁN
 
 function setCsMode(mode){
   csMode = mode;
@@ -972,6 +974,7 @@ function getCurrentStageDraft(){
     ragImage: gdriveDirect(document.getElementById('csRagUrl').value.trim()) || '',
     ragHomeX: csRagHome ? csRagHome.x : null,
     ragHomeY: csRagHome ? csRagHome.y : null,
+    ragSizePct: csRagSizePct,
     frontOverlay: gdriveDirect(document.getElementById('csFrontUrl').value.trim()) || '',
     completionNote: document.getElementById('csCompletionNote').value.trim(),
     tasks: csTasks
@@ -984,6 +987,7 @@ function loadStageDraft(stage){
   document.getElementById('csFrontUrl').value = stage.frontOverlay || '';
   document.getElementById('csCompletionNote').value = stage.completionNote || '';
   csRagHome = (stage.ragHomeX!=null && stage.ragHomeY!=null) ? {x:stage.ragHomeX, y:stage.ragHomeY} : null;
+  csRagSizePct = stage.ragSizePct || 9;
   csTasks = JSON.parse(JSON.stringify(stage.tasks || []));
   csPendingFrom = null;
   updateCsLayerGroupVisibility();
@@ -1002,6 +1006,7 @@ function addNewCsStage(){
   document.getElementById('csBgUrl').value='';
   document.getElementById('csRagUrl').value='';
   csRagHome = null;
+  csRagSizePct = 9;
   csTasks = [];
   csPendingFrom = null;
 
@@ -1210,10 +1215,10 @@ function renderCsMarkers(){
     html += `<div class="cs-marker from" style="left:${csPendingFrom.x*100}%;top:${csPendingFrom.y*100}%">•</div>`;
   }
   if(csRagHome){
-    html += csMarkerHtml({ cls:'rag', kind:'rag', idx:-1, x:csRagHome.x, y:csRagHome.y, sizePct:9, fallbackIcon:'🧻', resizable:false, badge:false });
+    html += csMarkerHtml({ cls:'rag', kind:'rag', idx:-1, x:csRagHome.x, y:csRagHome.y, sizePct:csRagSizePct, fallbackIcon:'🧻', resizable:true, badge:false });
   }
   if(csTrashHome){
-    html += csMarkerHtml({ cls:'trash', kind:'trash', idx:-1, x:csTrashHome.x, y:csTrashHome.y, sizePct:9, fallbackIcon:'🗑️', resizable:false, badge:false });
+    html += csMarkerHtml({ cls:'trash', kind:'trash', idx:-1, x:csTrashHome.x, y:csTrashHome.y, sizePct:csTrashSizePct, fallbackIcon:'🗑️', resizable:true, badge:false });
   }
   holder.innerHTML = html;
   holder.querySelectorAll('.cs-edit-marker').forEach(el => attachMarkerInteraction(el));
@@ -1239,6 +1244,8 @@ function csMarkerSetSize(kind, idx, sizePct){
   sizePct = Math.max(3, Math.min(40, sizePct));
   if(kind==='wipe-pos') csTasks[idx].sizePct = sizePct;
   else if(kind==='place-from' || kind==='place-to') csTasks[idx].sizePct = sizePct;
+  else if(kind==='rag') csRagSizePct = sizePct;
+  else if(kind==='trash') csTrashSizePct = sizePct;
   return sizePct;
 }
 
@@ -1391,6 +1398,7 @@ async function publishCleanSpace(){
     trashImage: trashImage || '',
     trashX: csTrashHome ? csTrashHome.x : null,
     trashY: csTrashHome ? csTrashHome.y : null,
+    trashSizePct: csTrashSizePct,
     stages: finalStages,
     deadline: new Date(deadlineVal).toISOString(),
     status: 'active',
@@ -1420,7 +1428,7 @@ async function publishCleanSpace(){
   document.getElementById('csShareUrl').textContent = link;
   showToast(isEditing
     ? `✅ Đã cập nhật ván #${ch.id} — ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`
-    : `🚀 Office Go! #${ch.id} đã publish với ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`, 'ok');
+    : `🚀 Dọn Dẹp Không Gian #${ch.id} đã publish với ${finalStages.length} màn, ${totalTasks} nhiệm vụ!`, 'ok');
 
   resetCsForm();
   if(isEditing) loadManage();
@@ -1443,13 +1451,15 @@ function resetCsForm(){
   csEditingId = null;
   csRagHome = null;
   csTrashHome = null;
+  csRagSizePct = 9;
+  csTrashSizePct = 12;
   setCsPlaceAction('keep');
   setCsPlaceTarget('zone');
   setCsItemLayer('front');
   updateCsTrashPosInfo();
   document.getElementById('csPublishBtn').textContent = '🚀 Publish';
   document.getElementById('csCancelEditBtn').style.display = 'none';
-  document.querySelector('#page-clean .page-hdr h2').textContent = '🧹 Tạo Game Office Go!';
+  document.querySelector('#page-clean .page-hdr h2').textContent = '🧹 Tạo Game Dọn Dẹp Không Gian';
   renderCsStageChips();
   renderCsPreview();
   renderCsList();
@@ -1465,6 +1475,7 @@ function editCleanSpace(id){
   document.getElementById('csDesc').value = ch.description || '';
   document.getElementById('csTrashUrl').value = ch.trashImage || '';
   csTrashHome = (ch.trashX!=null && ch.trashY!=null) ? { x: ch.trashX, y: ch.trashY } : null;
+  csTrashSizePct = ch.trashSizePct || 12;
   updateCsTrashPosInfo();
 
   const d = new Date(ch.deadline);
@@ -1514,7 +1525,7 @@ const GAME_TYPES = [
   { type:'spot-difference', icon:'🔍', name:'Spot Difference' },
   { type:'memory-match',    icon:'🃏', name:'Lật Thẻ' },
   { type:'sticker-puzzle',  icon:'🧩', name:'Sticker Puzzle' },
-  { type:'clean-space',     icon:'🧹', name:'Office Go!' },
+  { type:'clean-space',     icon:'🧹', name:'Dọn Dẹp Không Gian' },
 ];
 let gameSettings = {}; // {type: true/false}
 

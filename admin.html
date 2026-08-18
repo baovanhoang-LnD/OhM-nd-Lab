@@ -879,7 +879,7 @@ function copyStkLink(){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  CLEAN SPACE (Office Go!)
+//  CLEAN SPACE (Dọn Dẹp Không Gian)
 //  tasks: [{kind:'wipe', x,y, sizePct, noiquy, icon}]
 //         [{kind:'place', fromX,fromY, toX,toY, sizePct, noiquy, icon}]
 // ══════════════════════════════════════════════════════════════
@@ -1196,6 +1196,16 @@ function csMarkerHtml(o){
     </div>`;
 }
 
+// Icon emoji (🧽📦🧻🗑️...) dùng font-size tính bằng px cố định trong CSS nên KHÔNG tự co giãn
+// theo width% của khung marker — hàm này đọc kích thước thực tế (px) sau khi render/resize
+// rồi gán trực tiếp font-size cho icon để nó luôn tỉ lệ đúng với khung.
+function syncMarkerIconSize(el){
+  const icon = el.querySelector('.cs-em-icon');
+  if(!icon) return;
+  const w = el.offsetWidth || el.getBoundingClientRect().width;
+  if(w) icon.style.fontSize = Math.round(w * 0.6) + 'px';
+}
+
 function renderCsMarkers(){
   const holder = document.getElementById('csMarkers');
   if(!holder) return;
@@ -1221,7 +1231,7 @@ function renderCsMarkers(){
     html += csMarkerHtml({ cls:'trash', kind:'trash', idx:-1, x:csTrashHome.x, y:csTrashHome.y, sizePct:csTrashSizePct, fallbackIcon:'🗑️', resizable:true, badge:false });
   }
   holder.innerHTML = html;
-  holder.querySelectorAll('.cs-edit-marker').forEach(el => attachMarkerInteraction(el));
+  holder.querySelectorAll('.cs-edit-marker').forEach(el => { attachMarkerInteraction(el); syncMarkerIconSize(el); });
 }
 
 // Đọc/ghi vị trí (x,y dạng phần trăm 0-1) đúng vào đúng chỗ trong dữ liệu, theo loại marker
@@ -1308,6 +1318,7 @@ function attachMarkerInteraction(el){
         // sizePct = đường kính (2×bán kính) tính theo % chiều rộng ảnh
         const newSizePct = csMarkerSetSize(kind, idx, (distPx*2 / r.width) * 100);
         el.style.width = newSizePct + '%';
+        syncMarkerIconSize(el);
       }
       function onUp(){
         el.classList.remove('dragging');
@@ -1835,7 +1846,7 @@ function loadManage(){
   const active=challenges.filter(c=>c.status==='active'&&new Date(c.deadline)>now);
   document.getElementById('activeCount').textContent=active.length;
   const al=document.getElementById('activeList');
-  const typeLabel={sudoku:'🔢 Sudoku','spot-difference':'🔍 Spot','memory-match':'🃏 Lật Thẻ','sticker-puzzle':'🧩 Sticker Puzzle','clean-space':'🧹 Dọn Dẹp'};
+  const typeLabel={sudoku:'🔢 Sudoku','spot-difference':'🔍 Spot','memory-match':'🃏 Lật Thẻ','sticker-puzzle':'🧩 Sticker Puzzle','clean-space':'🧹 Office Go!'};
   if(!active.length){
     al.innerHTML='<div style="text-align:center;padding:24px;color:var(--t3)">😴 Không có ván nào đang active</div>';
   }else{

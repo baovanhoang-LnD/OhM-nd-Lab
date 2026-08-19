@@ -50,7 +50,7 @@
 
 .cs-zone{
   position:absolute; border:2px dashed var(--orange); border-radius:8px;
-  opacity:0;
+  opacity:.55;
 }
 
 .placed-badge{
@@ -103,12 +103,12 @@
   background: linear-gradient(180deg, #fff9d6 0%, #fff3b0 100%);
   border-radius: 4px; padding: 34px 26px 24px;
   box-shadow: 0 18px 40px -10px rgba(0,0,0,.45);
-  transform: rotate(-1.2deg) scale(0.9); transition: transform .3s ease;
+  transform: scale(0.9); transition: transform .3s ease;
   text-align:center;
 }
-.cs-stage-transition.show .cs-note-card{ transform: rotate(-1.2deg) scale(1); }
+.cs-stage-transition.show .cs-note-card{ transform: scale(1); }
 .cs-note-tape{
-  position:absolute; top:-14px; left:50%; transform:translateX(-50%) rotate(-3deg);
+  position:absolute; top:-14px; left:50%; transform:translateX(-50%);
   width:70px; height:26px; background: rgba(255,255,255,.55);
   border:1px solid rgba(0,0,0,.05); box-shadow:0 2px 4px rgba(0,0,0,.15);
 }
@@ -116,6 +116,11 @@
   font-size:15px; line-height:1.6; color:#4a3a1a; font-weight:600;
   white-space:pre-wrap; margin-bottom:20px;
 }
+.cs-note-text.align-left{ text-align:left; }
+.cs-note-text.align-center{ text-align:center; }
+.cs-note-text.align-right{ text-align:right; }
+.cs-note-text ul{ margin:0; padding-left:20px; text-align:left; }
+.cs-note-text li{ margin-bottom:4px; }
 .cs-note-btn{ width:100%; justify-content:center; }
 
 .score-big{font-family:var(--mono);font-size:48px;font-weight:500;color:var(--orange);line-height:1;margin:10px 0 4px;}
@@ -323,7 +328,7 @@ function startCardCountdown(id, deadline){
 }
 
 // ══════════════════════════════════════════════════════════════
-//  GAME ENGINE — Office Go!
+//  GAME ENGINE — DỌN DẸP KHÔNG GIAN
 //  2 loại nhiệm vụ:
 //   - "wipe":  kéo khăn lau đến vết bẩn tại (x,y) để xóa tại chỗ
 //   - "place": kéo vật từ (fromX,fromY) đến đúng vùng (toX,toY)
@@ -729,19 +734,42 @@ function markTaskDone(){
   }
 }
 
+// ── ĐỊNH DẠNG NỘI DUNG GIẤY NOTE: hỗ trợ bullet point ──────────
+// Dòng bắt đầu bằng "- " hoặc "• " sẽ được gom thành danh sách <ul><li>.
+// Các dòng còn lại giữ nguyên xuống dòng như cũ.
+function formatNoteText(raw){
+  const lines = String(raw).split('\n');
+  let html = '';
+  let inList = false;
+  for(const line of lines){
+    const bulletMatch = line.match(/^\s*[-•]\s+(.*)$/);
+    if(bulletMatch){
+      if(!inList){ html += '<ul>'; inList = true; }
+      html += `<li>${escH(bulletMatch[1])}</li>`;
+    } else {
+      if(inList){ html += '</ul>'; inList = false; }
+      if(html) html += '<br>';
+      html += escH(line);
+    }
+  }
+  if(inList) html += '</ul>';
+  return html;
+}
+
 // ── POPUP "GIẤY NOTE" KHI HOÀN THÀNH 1 MÀN ─────────────────────
 function showStageCompleteNote(){
   const isLastStage = G.stageIdx >= G.stages.length - 1;
   const noteText = G.stage.completionNote && G.stage.completionNote.trim()
     ? G.stage.completionNote
     : '🎉 Bạn đã hoàn thành xuất sắc!';
+  const align = G.stage.completionNoteAlign || 'center';
 
   const holder = document.getElementById('csStageTransition');
   if(!holder) return;
   holder.innerHTML = `
     <div class="cs-note-card">
       <div class="cs-note-tape"></div>
-      <div class="cs-note-text">${escH(noteText).replace(/\n/g,'<br>')}</div>
+      <div class="cs-note-text align-${align}">${formatNoteText(noteText)}</div>
       <button class="btn btn-primary cs-note-btn" id="csNoteBtn">
         ${isLastStage ? '🏁 Hoàn thành' : 'Ván tiếp theo →'}
       </button>

@@ -536,8 +536,16 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
             </div>
             <div class="form-group">
               <label class="form-label">💌 Lời khen khi hoàn thành màn này</label>
-              <textarea id="csCompletionNote" placeholder="VD: Tuyệt vời! Bạn đã dọn xong khu bếp chung. Cảm ơn bạn đã giữ gìn không gian chung sạch đẹp!"></textarea>
-              <div class="tip" style="margin-top:8px">📌 Hiện dưới dạng tờ giấy note ngay khi người chơi hoàn thành hết nhiệm vụ của màn này. Để trống sẽ dùng lời khen mặc định.</div>
+              <textarea id="csCompletionNote" placeholder="VD: Tuyệt vời! Bạn đã dọn xong khu bếp chung.&#10;- Bàn ghế đã ngay ngắn&#10;- Rác đã được phân loại&#10;Cảm ơn bạn đã giữ gìn không gian chung sạch đẹp!"></textarea>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+                <label class="form-label" style="margin:0">Căn lề:</label>
+                <select id="csCompletionNoteAlign" style="width:auto">
+                  <option value="center">Giữa</option>
+                  <option value="left">Trái</option>
+                  <option value="right">Phải</option>
+                </select>
+              </div>
+              <div class="tip" style="margin-top:8px">📌 Hiện dưới dạng tờ giấy note ngay khi người chơi hoàn thành hết nhiệm vụ của màn này. Để trống sẽ dùng lời khen mặc định. Gõ đầu dòng bằng "- " để tạo gạch đầu dòng (bullet point).</div>
             </div>
             <hr class="dv">
             <div class="card-label">Thêm nhiệm vụ cho màn này</div>
@@ -977,6 +985,7 @@ function getCurrentStageDraft(){
     ragSizePct: csRagSizePct,
     frontOverlay: gdriveDirect(document.getElementById('csFrontUrl').value.trim()) || '',
     completionNote: document.getElementById('csCompletionNote').value.trim(),
+    completionNoteAlign: document.getElementById('csCompletionNoteAlign').value,
     tasks: csTasks
   };
 }
@@ -986,6 +995,7 @@ function loadStageDraft(stage){
   document.getElementById('csRagUrl').value = stage.ragImage || '';
   document.getElementById('csFrontUrl').value = stage.frontOverlay || '';
   document.getElementById('csCompletionNote').value = stage.completionNote || '';
+  document.getElementById('csCompletionNoteAlign').value = stage.completionNoteAlign || 'center';
   csRagHome = (stage.ragHomeX!=null && stage.ragHomeY!=null) ? {x:stage.ragHomeX, y:stage.ragHomeY} : null;
   csRagSizePct = stage.ragSizePct || 9;
   csTasks = JSON.parse(JSON.stringify(stage.tasks || []));
@@ -1453,6 +1463,7 @@ function resetCsForm(){
   document.getElementById('csFrontUrl').value='';
   document.getElementById('csTrashUrl').value='';
   document.getElementById('csCompletionNote').value='';
+  document.getElementById('csCompletionNoteAlign').value='center';
   document.getElementById('csNoiquy').value='';
   document.getElementById('csItemIcon').value='';
   csStages = [];

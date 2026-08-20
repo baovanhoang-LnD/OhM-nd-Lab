@@ -49,6 +49,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:9px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;border:none;transition:all .15s;}
 .btn-primary{background:var(--orange);color:white;}.btn-primary:hover{background:var(--od);transform:translateY(-1px);box-shadow:0 4px 16px rgba(244,107,27,.35);}
 .btn-secondary{background:var(--bg);color:var(--text);border:1.5px solid var(--border);}.btn-secondary:hover{border-color:var(--orange);color:var(--orange);}
+.rtab.active{border-color:var(--orange);color:var(--orange);background:var(--ol);}
 .btn-danger{background:var(--rl);color:var(--red);border:1.5px solid #f5b5b5;}.btn-danger:hover{background:#fad5d5;}
 .btn-success{background:var(--gl);color:var(--green);border:1.5px solid #a3d9b4;}.btn-success:hover{background:#d0eedd;}
 .btn-sm{padding:6px 13px;font-size:12px;}
@@ -678,16 +679,26 @@ hr.dv{border:none;border-top:1.5px solid var(--border);margin:18px 0;}
       </div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-          <div class="card-label" style="margin:0">Kết quả chi tiết</div>
+          <div class="card-label" style="margin:0">Kết quả</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <select id="filterCh" onchange="loadResults()" style="width:auto">
+            <select id="filterCh" onchange="renderResultsFromCache()" style="width:auto">
               <option value="all">Tất cả ván</option>
+            </select>
+            <select id="filterMonth" onchange="renderResultsFromCache()" style="width:auto">
+              <option value="all">Tất cả tháng</option>
             </select>
             <button class="btn btn-secondary btn-sm" onclick="loadResults()">🔄</button>
             <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
           </div>
         </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="btn btn-secondary btn-sm rtab active" data-rtab="detail" onclick="switchResultsTab('detail',this)">📋 Chi tiết</button>
+          <button class="btn btn-secondary btn-sm rtab" data-rtab="ranking" onclick="switchResultsTab('ranking',this)">🏆 Xếp hạng theo game & độ khó</button>
+          <button class="btn btn-secondary btn-sm rtab" data-rtab="roster" onclick="switchResultsTab('roster',this)">👥 Nhân sự & lượt tham gia</button>
+        </div>
         <div id="resultsArea"><p style="color:var(--t3);font-size:13px">Đang tải...</p></div>
+        <div id="resultsRanking" style="display:none"></div>
+        <div id="resultsRoster" style="display:none"></div>
       </div>
     </div>
 
@@ -704,6 +715,7 @@ let challenges = JSON.parse(localStorage.getItem('bb_challenges')||'[]');
 let nextId = challenges.length ? Math.max(...challenges.map(c=>+c.id))+1 : 1;
 let currentDiff = 'medium';
 let publishedShareUrl = '';
+let _resultsAllScores = []; // MỚI — toàn bộ điểm số (mọi ván), lọc theo tháng/ván ở client, không gọi lại server mỗi lần đổi filter
 
 // ── LOGIN ────────────────────────────────────────────────────
 async function doLogin(){
@@ -1954,28 +1966,92 @@ function viewResultsForChallenge(id){
 // ══════════════════════════════════════════════════════════════
 //  RESULTS
 // ══════════════════════════════════════════════════════════════
+// ── KẾT QUẢ: fetch 1 lần, lọc & render nhiều view ở client ─────
+const typeLabelFull = {
+  sudoku:'🔢 Sudoku', 'spot-difference':'🔍 Spot Difference', 'memory-match':'🃏 Lật Thẻ',
+  'sticker-puzzle':'🧩 Sticker Puzzle', 'clean-space':'🧹 Office Go!'
+};
+const diffLabelFull = { easy:'Dễ', medium:'Trung bình', hard:'Khó' };
+// Tên "game" mà từng trang game gửi lên khi addScore (dùng để suy ra loại game
+// cho các điểm số có challengeId không còn khớp với ván nào trong danh sách hiện tại).
+const GAME_STR_TO_TYPE = {
+  'Sudoku':'sudoku', 'SpotDifference':'spot-difference', 'MemoryMatch':'memory-match',
+  'StickerPuzzle':'sticker-puzzle', 'CleanSpace':'clean-space'
+};
+
 async function loadResults(){
-  const filter=document.getElementById('filterCh').value;
   const sel=document.getElementById('filterCh');
   const existing=new Set([...sel.options].map(o=>o.value));
-  const typeLabel={sudoku:'🔢','spot-difference':'🔍','memory-match':'🃏','sticker-puzzle':'🧩','clean-space':'🧹'};
   challenges.forEach(c=>{
     if(!existing.has(String(c.id))){
       const opt=document.createElement('option');
       opt.value=c.id;
-      opt.textContent=`${typeLabel[c.type]||''} #${c.id} — ${c.title}`;
+      opt.textContent=`${(typeLabelFull[c.type]||'').split(' ')[0]||''} #${c.id} — ${c.title}`;
       sel.appendChild(opt);
     }
   });
 
-  let scores=[];
+  document.getElementById('resultsArea').innerHTML='<p style="color:var(--t3);font-size:13px">Đang tải...</p>';
   try{
-    const res=await fetch(`${SCRIPT_URL}?action=getScores&key=${_key}&challengeId=${filter}&_=${Date.now()}`);
-    const data=await res.json();scores=data.scores||[];
-  }catch(e){scores=JSON.parse(localStorage.getItem('bb_scores_v2')||'[]');}
+    const res=await fetch(`${SCRIPT_URL}?action=getScores&key=${_key}&challengeId=all&_=${Date.now()}`);
+    const data=await res.json();
+    _resultsAllScores=data.scores||[];
+    localStorage.setItem('bb_scores_v2', JSON.stringify(_resultsAllScores));
+  }catch(e){
+    _resultsAllScores=JSON.parse(localStorage.getItem('bb_scores_v2')||'[]');
+  }
+  populateMonthFilter();
+  renderResultsFromCache();
+}
 
-  const filtered=filter==='all'?scores:scores.filter(s=>String(s.challengeId)===String(filter));
-  filtered.sort((a,b)=>a.time-b.time);
+// Xây danh sách các tháng thực sự có dữ liệu, thay vì để admin tự đoán
+function populateMonthFilter(){
+  const monthSel = document.getElementById('filterMonth');
+  const current = monthSel.value || 'all';
+  const months = new Set();
+  _resultsAllScores.forEach(s=>{
+    const d = new Date(s.timestamp);
+    if(!isNaN(d)) months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  });
+  const sorted = [...months].sort().reverse();
+  monthSel.innerHTML = '<option value="all">Tất cả tháng</option>' +
+    sorted.map(m=>{ const [y,mo]=m.split('-'); return `<option value="${m}">Tháng ${+mo}/${y}</option>`; }).join('');
+  if([...monthSel.options].some(o=>o.value===current)) monthSel.value = current;
+}
+
+// Tra loại game + độ khó của 1 điểm số, ưu tiên khớp với ván hiện có (đủ dữ liệu nhất),
+// nếu ván đã bị xoá khỏi danh sách thì suy ra loại game từ chuỗi "game" đã gửi lên lúc chơi.
+function scoreMeta(s){
+  const c = challenges.find(x=>String(x.id)===String(s.challengeId));
+  if(c) return { type: c.type, difficulty: c.difficulty || null };
+  return { type: GAME_STR_TO_TYPE[s.game] || null, difficulty: null };
+}
+
+function getFilteredScores(){
+  const chFilter = document.getElementById('filterCh').value;
+  const monthFilter = document.getElementById('filterMonth').value;
+  return _resultsAllScores.filter(s=>{
+    if(chFilter!=='all' && String(s.challengeId)!==String(chFilter)) return false;
+    if(monthFilter!=='all'){
+      const d = new Date(s.timestamp);
+      if(isNaN(d)) return false;
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      if(key!==monthFilter) return false;
+    }
+    return true;
+  });
+}
+
+function switchResultsTab(name, el){
+  document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('resultsArea').style.display    = name==='detail'  ? '' : 'none';
+  document.getElementById('resultsRanking').style.display = name==='ranking' ? '' : 'none';
+  document.getElementById('resultsRoster').style.display  = name==='roster'  ? '' : 'none';
+}
+
+function renderResultsFromCache(){
+  const filtered = getFilteredScores().slice().sort((a,b)=>a.time-b.time);
 
   const unique=new Set(filtered.map(s=>s.name));
   const avg=filtered.length?Math.round(filtered.reduce((s,r)=>s+r.time,0)/filtered.length):0;
@@ -1989,28 +2065,121 @@ async function loadResults(){
   document.getElementById('stHints').textContent=avgHint;
 
   const area=document.getElementById('resultsArea');
-  if(!filtered.length){area.innerHTML='<p style="color:var(--t3);font-size:13px;padding:20px 0">Chưa có kết quả nào</p>';return;}
+  if(!filtered.length){
+    area.innerHTML='<p style="color:var(--t3);font-size:13px;padding:20px 0">Chưa có kết quả nào</p>';
+  } else {
+    const ri=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+    area.innerHTML=`<table class="tbl">
+      <thead><tr><th>Hạng</th><th>Tên</th><th>Phòng ban</th><th>Ván game</th><th>Thời gian</th><th>Lỗi</th><th>Hint</th><th>Lúc</th></tr></thead>
+      <tbody>${filtered.map((s,i)=>`
+        <tr>
+          <td>${ri(i)}</td>
+          <td style="font-weight:700">${escH(s.name)}</td>
+          <td style="color:var(--t2)">${escH(s.dept||'—')}</td>
+          <td style="font-size:12px;color:var(--t2)">${escH(s.title||'—')}</td>
+          <td style="font-family:var(--mono);color:var(--orange);font-weight:500">${formatTime(+s.time)}</td>
+          <td style="color:var(--red);font-weight:700">${s.errors||0}</td>
+          <td style="color:var(--blue);font-weight:700">${s.hints||0}</td>
+          <td style="font-size:11px;color:var(--t3)">${new Date(s.timestamp).toLocaleString('vi-VN')}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  renderResultsRanking(filtered);
+  renderResultsRoster(filtered);
+}
+
+// ── 🏆 XẾP HẠNG THEO GAME & ĐỘ KHÓ ──────────────────────────────
+// Gom điểm theo (loại game, độ khó); mỗi nhân sự chỉ tính lượt NHANH NHẤT của họ
+// trong nhóm đó để xếp hạng, kèm số lần họ đã chơi trong nhóm này.
+function renderResultsRanking(filtered){
+  const holder = document.getElementById('resultsRanking');
+  if(!filtered.length){
+    holder.innerHTML = '<p style="color:var(--t3);font-size:13px;padding:20px 0">Chưa có kết quả nào</p>';
+    return;
+  }
+
+  const groups = {}; // key = "type|difficulty" -> { type, difficulty, byPlayer: Map }
+  filtered.forEach(s=>{
+    const { type, difficulty } = scoreMeta(s);
+    const key = `${type||'unknown'}|${difficulty||'none'}`;
+    if(!groups[key]) groups[key] = { type, difficulty, byPlayer: new Map() };
+    const pKey = `${s.name}||${s.dept||''}`;
+    const g = groups[key];
+    const existing = g.byPlayer.get(pKey);
+    if(!existing || s.time < existing.best.time){
+      g.byPlayer.set(pKey, { name:s.name, dept:s.dept, best:s, plays:(existing?existing.plays:0)+1 });
+    } else {
+      existing.plays += 1;
+    }
+  });
+
   const ri=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
-  area.innerHTML=`<table class="tbl">
-    <thead><tr><th>Hạng</th><th>Tên</th><th>Phòng ban</th><th>Ván game</th><th>Thời gian</th><th>Lỗi</th><th>Hint</th><th>Lúc</th></tr></thead>
-    <tbody>${filtered.map((s,i)=>`
+  const order = ['sudoku','spot-difference','memory-match','sticker-puzzle','clean-space'];
+  const keys = Object.keys(groups).sort((a,b)=>{
+    const [ta,da]=a.split('|'), [tb,db]=b.split('|');
+    const oa=order.indexOf(ta), ob=order.indexOf(tb);
+    if(oa!==ob) return (oa<0?99:oa)-(ob<0?99:ob);
+    return da.localeCompare(db);
+  });
+
+  holder.innerHTML = keys.map(key=>{
+    const g = groups[key];
+    const label = (typeLabelFull[g.type] || '❓ Không xác định') + (g.difficulty ? ` · ${diffLabelFull[g.difficulty]||g.difficulty}` : '');
+    const ranked = [...g.byPlayer.values()].sort((a,b)=>a.best.time-b.best.time);
+    return `<div style="margin-bottom:22px">
+      <div style="font-weight:800;font-size:14px;margin-bottom:8px">${label} <span style="font-weight:500;color:var(--t3);font-size:12px">(${ranked.length} người)</span></div>
+      <table class="tbl">
+        <thead><tr><th>Hạng</th><th>Tên</th><th>Phòng ban</th><th>Thời gian tốt nhất</th><th>Số lần chơi</th></tr></thead>
+        <tbody>${ranked.map((p,i)=>`
+          <tr>
+            <td>${ri(i)}</td>
+            <td style="font-weight:700">${escH(p.name)}</td>
+            <td style="color:var(--t2)">${escH(p.dept||'—')}</td>
+            <td style="font-family:var(--mono);color:var(--orange);font-weight:500">${formatTime(+p.best.time)}</td>
+            <td style="text-align:center">${p.plays}</td>
+          </tr>`).join('')}
+        </tbody></table>
+    </div>`;
+  }).join('');
+}
+
+// ── 👥 DANH SÁCH NHÂN SỰ & LƯỢT THAM GIA ────────────────────────
+function renderResultsRoster(filtered){
+  const holder = document.getElementById('resultsRoster');
+  if(!filtered.length){
+    holder.innerHTML = '<p style="color:var(--t3);font-size:13px;padding:20px 0">Chưa có kết quả nào</p>';
+    return;
+  }
+
+  const byPlayer = new Map(); // key = "name||dept" -> { name, dept, count, types:Set, lastPlayed }
+  filtered.forEach(s=>{
+    const pKey = `${s.name}||${s.dept||''}`;
+    const { type } = scoreMeta(s);
+    if(!byPlayer.has(pKey)) byPlayer.set(pKey, { name:s.name, dept:s.dept, count:0, types:new Set(), lastPlayed:0 });
+    const p = byPlayer.get(pKey);
+    p.count += 1;
+    if(type) p.types.add(type);
+    const t = new Date(s.timestamp).getTime();
+    if(!isNaN(t) && t > p.lastPlayed) p.lastPlayed = t;
+  });
+
+  const roster = [...byPlayer.values()].sort((a,b)=>b.count-a.count);
+  holder.innerHTML = `<table class="tbl">
+    <thead><tr><th>Tên</th><th>Phòng ban</th><th>Tổng lượt chơi</th><th>Các game đã chơi</th><th>Chơi gần nhất</th></tr></thead>
+    <tbody>${roster.map(p=>`
       <tr>
-        <td>${ri(i)}</td>
-        <td style="font-weight:700">${escH(s.name)}</td>
-        <td style="color:var(--t2)">${escH(s.dept||'—')}</td>
-        <td style="font-size:12px;color:var(--t2)">${escH(s.title||'—')}</td>
-        <td style="font-family:var(--mono);color:var(--orange);font-weight:500">${formatTime(+s.time)}</td>
-        <td style="color:var(--red);font-weight:700">${s.errors||0}</td>
-        <td style="color:var(--blue);font-weight:700">${s.hints||0}</td>
-        <td style="font-size:11px;color:var(--t3)">${new Date(s.timestamp).toLocaleString('vi-VN')}</td>
+        <td style="font-weight:700">${escH(p.name)}</td>
+        <td style="color:var(--t2)">${escH(p.dept||'—')}</td>
+        <td style="text-align:center;font-weight:700;color:var(--orange)">${p.count}</td>
+        <td style="font-size:12px;color:var(--t2)">${[...p.types].map(t=>typeLabelFull[t]||t).join(', ')||'—'}</td>
+        <td style="font-size:11px;color:var(--t3)">${p.lastPlayed?new Date(p.lastPlayed).toLocaleString('vi-VN'):'—'}</td>
       </tr>`).join('')}
     </tbody></table>`;
 }
 
 function exportCSV(){
-  const scores=JSON.parse(localStorage.getItem('bb_scores_v2')||'[]');
-  const filter=document.getElementById('filterCh').value;
-  const data=filter==='all'?scores:scores.filter(s=>String(s.challengeId)===String(filter));
+  const data=getFilteredScores();
   const csv=['Tên,Phòng ban,Ván game,Challenge ID,Thời gian(giây),Thời gian,Lỗi,Hint,Lúc',
     ...data.map(s=>`${s.name},${s.dept||''},${s.title||''},${s.challengeId},${s.time},${formatTime(+s.time)},${s.errors||0},${s.hints||0},${s.timestamp}`)
   ].join('\n');
